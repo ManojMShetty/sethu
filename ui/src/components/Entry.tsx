@@ -1,21 +1,40 @@
 import { derive, issueOf, LEVEL_NAME, STATUS_NAME, type Report } from "../data";
 import { ageText, deadlineText, reopenedText, residentsText, useT } from "../i18n";
 import { Chip, DeadlineBar, Rail } from "./Bits";
+import Actions from "./Actions";
+import { useState } from "react";
 
 /* One entry in the register. Not a card: hairline rules top and bottom,
    a severity rail down the left margin, and the deadline as a ruled bar
    across the foot. The strip under that bar answers the only question a
    resident actually has once a deadline has gone. */
+/* The server sends the body that spoke as a code. The dictionary is
+   keyed on the name, so this is the one hop between them. */
+const BODY_LABEL: Record<string, string> = {
+  gp: "Gram Panchayat",
+  escom: "CESC Mysuru",
+  rdwsd: "Rural Drinking Water & Sanitation Dept",
+  pred: "Panchayat Raj Engineering Division",
+  pwd: "Public Works Department",
+  edu: "Education Department",
+  ksrtc: "KSRTC"
+};
+
 export default function Entry({
   report,
   offset,
-  index
+  index,
+  staff = false,
+  onChanged
 }: {
   report: Report;
   offset: number;
   index: number;
+  staff?: boolean;
+  onChanged?: () => void;
 }) {
   const { lang, t } = useT();
+  const [trail, setTrail] = useState(false);
   const d = derive(report, offset);
   const issue = issueOf(report.issue);
   const done = report.status === "fixed";
@@ -68,12 +87,51 @@ export default function Entry({
         </p>
       )}
 
-      {report.reason && !done && (
-        <p className="mt-3 rounded-[10px] bg-sunken px-3 py-2 text-[13px] text-ink2">
-          <span className="font-semibold text-ink">{t(report.reason.headline)}</span>
-          <span className="text-ink3"> · {t(report.reason.detail)}</span>
-        </p>
+      {/* Every reason the office has posted, oldest first. A single
+          latest reason lets a department overwrite its own record; the
+          stack is what makes a pattern of excuses visible. */}
+      {(report.reasons?.length
+        ? report.reasons
+        : report.reason
+          ? [{ ...report.reason, body: "", at: 0 }]
+          : []
+      ).map((r, n) => (
+        <div
+          key={n}
+          className="mt-3 rounded-[10px] bg-sunken px-3 py-2 text-[13px] text-ink2"
+        >
+          <p className="font-semibold text-ink">{t(r.headline)}</p>
+          {r.detail && <p className="mt-0.5 text-ink3">{t(r.detail)}</p>}
+          {"body" in r && r.body && (
+            <p className="micro mt-1 text-stamp">
+              — {t(BODY_LABEL[r.body] ?? r.body)}
+            </p>
+          )}
+        </div>
+      ))}
+
+      {report.history && report.history.length > 0 && (
+        <>
+          <button
+            className="micro mt-3 text-stamp"
+            onClick={() => setTrail((v) => !v)}
+            aria-expanded={trail}
+          >
+            {t(trail ? "Hide what happened" : "What happened so far")}
+          </button>
+          {trail && (
+            <ol className="mt-2 border-l-2 border-rule pl-3">
+              {report.history.map((h, n) => (
+                <li key={n} className="py-1 text-[12.5px] leading-snug text-ink2">
+                  {t(h.message)}
+                </li>
+              ))}
+            </ol>
+          )}
+        </>
       )}
+
+      <Actions report={report} staff={staff} onDone={() => onChanged?.()} />
 
       {done && report.closedByResident && (
         <p className="mt-3 rounded-[10px] bg-okwash px-3 py-2 text-[13px] font-semibold text-ok">

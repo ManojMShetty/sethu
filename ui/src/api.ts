@@ -73,12 +73,40 @@ interface RawReport {
   owner?: string;
   silent?: boolean;
   reasons?: RawReason[];
+  history?: { message: string; at: number }[];
+  reporter_hash?: string;
 }
 
 interface RawPayload {
   now: number;
   reports: RawReport[];
+  rules?: {
+    reasons?: Record<string, string>;
+    bodies?: Record<string, { name: string; officer: string; reach: string }>;
+  };
 }
+
+/* The server ships its rule tables alongside the data so the two can
+   never quietly disagree. These are the copies the screens read; the
+   defaults are what a demo with no server falls back to. */
+export let REASON_CODES: Record<string, string> = {
+  no_funds: "No funds until the Gram Sabha approves this work",
+  not_our_asset: "This asset belongs to another department",
+  awaiting_material: "Waiting for material or a spare part",
+  work_ordered: "Work order issued, contractor scheduled",
+  no_staff: "No staff available for this trade",
+  needs_sanction: "Needs technical sanction above the Panchayat's limit"
+};
+
+export let BODY_NAMES: Record<string, string> = {
+  gp: "Gram Panchayat",
+  escom: "CESC Mysuru",
+  rdwsd: "Rural Drinking Water & Sanitation Dept",
+  pred: "Panchayat Raj Engineering Division",
+  pwd: "Public Works Department",
+  edu: "Education Department",
+  ksrtc: "KSRTC"
+};
 
 export interface Live {
   reports: Report[];
@@ -96,7 +124,7 @@ function statusOf(raw: RawReport): Status {
   return "waiting";
 }
 
-function convert(raw: RawReport, now: number): Report {
+function convert(raw: RawReport, now: number, token: string): Report {
   const last = raw.reasons?.length ? raw.reasons[raw.reasons.length - 1] : null;
 
   return {
@@ -113,8 +141,33 @@ function convert(raw: RawReport, now: number): Report {
       raw.owner_body && raw.owner_body !== "gp" ? raw.owner : undefined,
     reason: last ? { headline: last.label, detail: last.detail } : undefined,
     closedByResident: raw.status === "resolved",
-    serverSilent: raw.silent
+    serverSilent: raw.silent,
+    reasons: raw.reasons?.map((r) => ({
+      headline: r.label,
+      detail: r.detail,
+      body: r.body,
+      at: r.at
+    })),
+    history: raw.history,
+    ownerBody: raw.owner_body,
+    mine: Boolean(raw.reporter_hash) && raw.reporter_hash === token
   };
+}
+
+/* One token per browser, kept forever. It is how the server knows who
+   filed a report, and therefore who is allowed to close it. Nothing
+   else in the app depends on knowing who you are. */
+export function deviceToken(): string {
+  try {
+    let t = localStorage.getItem("sethu.token");
+    if (!t) {
+      t = "tok-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("sethu.token", t);
+    }
+    return t;
+  } catch {
+    return "tok-anonymous";
+  }
 }
 
 async function ask<T>(path: string, body?: unknown): Promise<T> {
@@ -137,8 +190,15 @@ async function ask<T>(path: string, body?: unknown): Promise<T> {
 export async function loadReports(): Promise<Live> {
   try {
     const payload = await ask<RawPayload>("/api/reports");
+    if (payload.rules?.reasons) REASON_CODES = payload.rules.reasons;
+    if (payload.rules?.bodies) {
+      BODY_NAMES = Object.fromEntries(
+        Object.entries(payload.rules.bodies).map(([k, v]) => [k, v.name])
+      );
+    }
+    const me = deviceToken();
     return {
-      reports: payload.reports.map((r) => convert(r, payload.now)),
+      reports: payload.reports.map((r) => convert(r, payload.now, me)),
       online: true
     };
   } catch {
@@ -192,3 +252,45 @@ export async function fileReport(input: {
     return null;
   }
 }
+
+/* ------------------------------------------------------------------
+   The four things a person can do to a report after it is filed.
+
+   Each one is a thin call. Every rule that matters — that a reason
+   cannot buy time, that a late repair cannot be claimed until someone
+   has explained, that only the reporting device may close a report —
+   lives on the server, and these functions surface its refusal rather
+   than guessing at it in the browser. The message that comes back is
+   the server's own words, so the screen can never soften them.
+   ------------------------------------------------------------------ */
+
+async function act(path: string, body: unknown): Promise<string | null> {
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const answer = await response.json().catch(() => ({}));
+    if (response.ok) return null;
+    return answer.error || "That did not go through.";
+  } catch {
+    return "No connection to the Panchayat server.";
+  }
+}
+
+export const assignReport = (id: string, worker: string) =>
+  act("/api/assign", { id, worker });
+
+export const giveReason = (
+  id: string,
+  code: string,
+  detail: string,
+  to?: string
+) => act("/api/reason", { id, code, detail, to });
+
+export const claimRepair = (id: string, photo: string) =>
+  act("/api/repaired", { id, photo });
+
+export const confirmFix = (id: string, works: boolean) =>
+  act("/api/confirm", { id, works, token: deviceToken() });

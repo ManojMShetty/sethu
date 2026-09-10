@@ -54,6 +54,19 @@ export interface Report {
   closedByResident?: boolean;
   /** Set only by the server, which is the authority on this. */
   serverSilent?: boolean;
+
+  /* Everything below comes from the server. Offline seed rows leave it
+     empty, which is honest: there is no ledger without a server. */
+
+  /** Every reason ever posted on this report, oldest first. */
+  reasons?: { headline: string; detail: string; body: string; at: number }[];
+  /** The public trail: filed, assigned, escalated, explained, closed. */
+  history?: { message: string; at: number }[];
+  /** Whose desk it is on now, as a body code the actions need. */
+  ownerBody?: string;
+  /** True when this device is the one that filed it. Only that device
+      can close it, and the server enforces that regardless. */
+  mine?: boolean;
 }
 
 /* The hours are not invented. A live wire is the shortest because it

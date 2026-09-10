@@ -124,7 +124,12 @@ export default function App() {
               </p>
             </div>
             {filed && <Receipt filed={filed} onClose={() => setFiled(null)} />}
-            <Rows reports={ledger} offset={offset} loading={loading} />
+            <Rows
+              reports={ledger}
+              offset={offset}
+              loading={loading}
+              onChanged={refresh}
+            />
           </div>
         )}
 
@@ -136,6 +141,7 @@ export default function App() {
                 {t(
                   "Sorted by what breaches soonest, not by date. A job closes only when the resident who reported it confirms."
                 )}
+                {!staff && " " + t("Switch to Panchayat staff in the menu to answer.")}
               </p>
               {stats.silent > 0 && (
                 <p className="micro mt-3 inline-flex items-center rounded-full bg-critwash px-3 py-1.5 text-crit">
@@ -143,7 +149,13 @@ export default function App() {
                 </p>
               )}
             </div>
-            <Rows reports={desk} offset={offset} loading={loading} />
+            <Rows
+              reports={desk}
+              offset={offset}
+              loading={loading}
+              staff={staff}
+              onChanged={refresh}
+            />
           </div>
         )}
       </main>
@@ -212,11 +224,15 @@ function Receipt({ filed, onClose }: { filed: Filed; onClose: () => void }) {
 function Rows({
   reports,
   offset,
-  loading
+  loading,
+  staff = false,
+  onChanged
 }: {
   reports: Report[];
   offset: number;
   loading: boolean;
+  staff?: boolean;
+  onChanged?: () => void;
 }) {
   const { t } = useT();
 
@@ -239,7 +255,14 @@ function Rows({
   return (
     <div className="flex flex-col gap-3 px-4">
       {reports.map((r, i) => (
-        <Entry key={r.id} report={r} offset={offset} index={i} />
+        <Entry
+          key={r.id}
+          report={r}
+          offset={offset}
+          index={i}
+          staff={staff}
+          onChanged={onChanged}
+        />
       ))}
     </div>
   );

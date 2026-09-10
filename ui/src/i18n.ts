@@ -186,6 +186,38 @@ const KN: Record<string, string> = {
     "ಅಂದಾಜು ನಮ್ಮ ಮಿತಿ ಮೀರಿದೆ, ಪಿಆರ್‌ಇಡಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ",
   "past deadline with nothing said": "ಗಡುವು ಮೀರಿ ಏನೂ ಹೇಳಿಲ್ಲ",
 
+  // ---------- the office answering, and the resident answering back ----------
+  "Assign to staff": "ಸಿಬ್ಬಂದಿಗೆ ವಹಿಸಿ",
+  Assign: "ವಹಿಸಿ",
+  "Who is taking this job?": "ಈ ಕೆಲಸ ಯಾರು ತೆಗೆದುಕೊಳ್ಳುತ್ತಾರೆ?",
+  "Give a reason": "ಕಾರಣ ತಿಳಿಸಿ",
+  "Which department does it belong to?": "ಇದು ಯಾವ ಇಲಾಖೆಗೆ ಸೇರಿದ್ದು?",
+  "Anything the resident should know": "ನಿವಾಸಿಗೆ ತಿಳಿಸಬೇಕಾದ ವಿಷಯ",
+  "A reason does not pause the deadline.": "ಕಾರಣ ಕೊಟ್ಟರೂ ಗಡುವು ನಿಲ್ಲುವುದಿಲ್ಲ.",
+  "Post this where everyone can see it": "ಎಲ್ಲರಿಗೂ ಕಾಣುವಂತೆ ಪ್ರಕಟಿಸಿ",
+  "Submit repair proof": "ದುರಸ್ತಿಯ ಸಾಕ್ಷಿ ಸಲ್ಲಿಸಿ",
+  "Staff say this is repaired. Only you can close it.":
+    "ದುರಸ್ತಿ ಆಗಿದೆ ಎಂದು ಸಿಬ್ಬಂದಿ ಹೇಳಿದ್ದಾರೆ. ಮುಚ್ಚಬಲ್ಲವರು ನೀವು ಮಾತ್ರ.",
+  "Repair claimed. Waiting for the resident who reported it.":
+    "ದುರಸ್ತಿ ಆಗಿದೆ ಎಂದು ಹೇಳಲಾಗಿದೆ. ದೂರು ನೀಡಿದ ನಿವಾಸಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ.",
+  "It is fixed": "ಸರಿಯಾಗಿದೆ",
+  "Still broken": "ಇನ್ನೂ ಹಾಳಾಗಿದೆ",
+  "What happened so far": "ಇಲ್ಲಿಯವರೆಗೆ ಏನಾಯಿತು",
+  "Hide what happened": "ಮುಚ್ಚಿ",
+  "Switch to Panchayat staff in the menu to answer.":
+    "ಉತ್ತರಿಸಲು ಮೆನುವಿನಲ್ಲಿ ಪಂಚಾಯತಿ ಸಿಬ್ಬಂದಿಗೆ ಬದಲಿಸಿ.",
+
+  // history lines the server writes
+  "Reported by a resident": "ನಿವಾಸಿಯಿಂದ ದೂರು",
+  "Another resident reported the same problem":
+    "ಇನ್ನೊಬ್ಬ ನಿವಾಸಿ ಇದೇ ಸಮಸ್ಯೆಯನ್ನು ವರದಿ ಮಾಡಿದ್ದಾರೆ",
+  "Staff submitted repair proof. Waiting for the resident who reported it.":
+    "ಸಿಬ್ಬಂದಿ ದುರಸ್ತಿಯ ಸಾಕ್ಷಿ ಸಲ್ಲಿಸಿದ್ದಾರೆ. ದೂರು ನೀಡಿದ ನಿವಾಸಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ.",
+  "Resident confirmed the repair. Report closed.":
+    "ನಿವಾಸಿ ದುರಸ್ತಿಯನ್ನು ದೃಢಪಡಿಸಿದ್ದಾರೆ. ದೂರು ಮುಚ್ಚಲಾಗಿದೆ.",
+  "Resident says it is still broken. Reopened, and the clock restarted.":
+    "ಇನ್ನೂ ಹಾಳಾಗಿದೆ ಎಂದು ನಿವಾಸಿ ಹೇಳಿದ್ದಾರೆ. ಮತ್ತೆ ತೆರೆಯಲಾಗಿದೆ, ಗಡಿಯಾರ ಮರಳಿ ಶುರುವಾಗಿದೆ.",
+
   // ---------- the microphone ----------
   Listening: "ಕೇಳಿಸುತ್ತಿದೆ",
   Ready: "ಸಿದ್ಧ",
