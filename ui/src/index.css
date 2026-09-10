@@ -126,8 +126,14 @@
   --color-crit: var(--c-crit);
   --color-critwash: var(--c-crit-wash);
 
+  /* The tab bar's height, so the report form's footer can sit exactly
+     on top of it instead of guessing. */
+  --nav-h: calc(3.05rem + env(safe-area-inset-bottom));
+
   --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display-kn: "Noto Serif Kannada", "Tunga", serif;
+  --font-sans-kn: "Noto Sans Kannada", "Tunga", ui-sans-serif, sans-serif;
 }
 
 * {
@@ -160,6 +166,28 @@ body {
   font-style: italic;
   letter-spacing: -0.015em;
   text-wrap: balance;
+}
+
+/* Kannada has no italic, and neither Fraunces nor Outfit carries a
+   single Kannada glyph. Left alone the browser falls back to whatever
+   it can find and then slants it by shearing the pixels, which on a
+   script this dense is not a style, it is a legibility problem. So
+   Kannada gets its own faces, upright, and a shade more line height
+   because the vowel marks sit above and below. */
+:lang(kn) {
+  font-family: var(--font-sans-kn);
+}
+
+:lang(kn) .display {
+  font-family: var(--font-display-kn);
+  font-style: normal;
+  font-variation-settings: normal;
+  line-height: 1.35;
+}
+
+:lang(kn) .micro {
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .figure {

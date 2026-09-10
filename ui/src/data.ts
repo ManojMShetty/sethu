@@ -289,21 +289,6 @@ export function derive(report: Report, offset: number): Derived {
   };
 }
 
-export function deadlineText(d: Derived, done: boolean): string {
-  if (done) return "Closed by the resident";
-  if (d.hoursLeft < 0)
-    return `Deadline missed by ${Math.abs(Math.round(d.hoursLeft))} hours`;
-  return `${Math.round(d.hoursLeft)} hours left of ${d.sla}`;
-}
-
-export function ageText(hours: number): string {
-  const h = Math.max(0, Math.round(hours));
-  if (h < 1) return "just now";
-  if (h < 48) return `${h} ${h === 1 ? "hour" : "hours"} old`;
-  const days = Math.round(h / 24);
-  return `${days} ${days === 1 ? "day" : "days"} old`;
-}
-
 export interface Stats {
   open: number;
   late: number;

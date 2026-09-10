@@ -1,5 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Stats } from "../data";
+import { useT, type Lang } from "../i18n";
+import {
+  CheckIcon,
+  ClockIcon,
+  MenuIcon,
+  OpenIcon,
+  RejectIcon,
+  SilentIcon
+} from "./Bits";
 
 interface Props {
   stats: Stats;
@@ -7,35 +16,29 @@ interface Props {
   online: boolean;
   onShift: (hours: number) => void;
   onReset: () => void;
-  kannada: boolean;
-  onToggleKannada: () => void;
+  lang: Lang;
+  onLang: (next: Lang) => void;
   staff: boolean;
   onToggleRole: () => void;
 }
 
 /* The five figures are the argument the app makes, so they sit above
-   everything and recalculate the moment the clock moves. "Late, no
-   reason given" is last because it is the one nobody else counts. */
-function StatCell({
-  n,
-  label,
-  tone
-}: {
-  n: number;
-  label: string;
-  tone?: "crit" | "late";
-}) {
-  const colour =
-    tone === "crit" ? "text-crit" : tone === "late" ? "text-late" : "text-brandink";
-  return (
-    <div className="flex shrink-0 flex-col gap-0.5 pr-6 last:pr-0">
-      <span className={`display figure text-[27px] leading-none font-semibold ${colour}`}>
-        {n}
-      </span>
-      <span className="micro whitespace-nowrap text-brandink/65">{label}</span>
-    </div>
-  );
-}
+   everything and recalculate the moment the clock moves. Everything
+   else that used to live up here — who you are, what the demo clock is
+   doing, whether a server answered — is machinery, and machinery goes
+   behind the menu. */
+const CELLS = [
+  { key: "open", Icon: OpenIcon, short: "Open", full: "open" },
+  { key: "late", Icon: ClockIcon, short: "Late", full: "past deadline" },
+  { key: "fixed", Icon: CheckIcon, short: "Fixed", full: "fixed and verified" },
+  { key: "rejected", Icon: RejectIcon, short: "Rejected", full: "repairs rejected" },
+  { key: "silent", Icon: SilentIcon, short: "Silent", full: "late, no reason given" }
+] as const;
+
+const TONE: Record<string, string> = {
+  late: "text-late",
+  silent: "text-crit"
+};
 
 export default function Header({
   stats,
@@ -43,99 +46,162 @@ export default function Header({
   online,
   onShift,
   onReset,
-  kannada,
-  onToggleKannada,
+  lang,
+  onLang,
   staff,
   onToggleRole
 }: Props) {
-  const [clockOpen, setClockOpen] = useState(false);
+  const { t } = useT();
+  const [menu, setMenu] = useState(false);
 
-  const pill =
-    "micro rounded-full border border-brandink/25 px-2.5 py-1 text-brandink/85 transition hover:border-brandink/60 hover:text-brandink";
+  useEffect(() => {
+    if (!menu) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menu]);
+
+  const chip =
+    "micro border border-brandink/25 px-2.5 py-1.5 transition hover:border-brandink/60";
 
   return (
-    <header className="sticky top-0 z-30 bg-brand text-brandink">
-      <div className="mx-auto w-full max-w-2xl px-4 pt-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="display text-[26px] leading-none font-semibold">Sethu</h1>
-            <p className="mt-1 text-[12px] text-brandink/65">Gram Panchayat asset ledger</p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-            <span
-              className="micro inline-flex items-center gap-1.5 rounded-full border border-brandink/25 px-2.5 py-1 text-brandink/85"
-              title={
-                online
-                  ? "Reading the live ledger from server.py"
-                  : "No server reachable. Showing the seed ledger."
-              }
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-ok" : "bg-late"}`} />
-              {online ? "server" : "offline"}
-            </span>
-            <button className={pill} onClick={onToggleKannada} aria-pressed={kannada}>
-              {kannada ? "English" : "ಕನ್ನಡ"}
-            </button>
-            <button className={pill} onClick={onToggleRole} aria-pressed={staff}>
-              {staff ? "Panchayat staff" : "Resident"}
-            </button>
-          </div>
-        </div>
+    <header className="sticky top-0 z-30 text-brandink">
+      <div className="relative z-30 bg-brand">
+        <div className="mx-auto w-full max-w-2xl px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <h1 lang="en" className="display text-[25px] leading-none font-semibold">
+              Sethu
+            </h1>
 
-        <div className="no-bar fade-right mt-3.5 flex overflow-x-auto pb-3">
-          <StatCell n={stats.open} label="open" />
-          <StatCell n={stats.late} label="past deadline" tone="late" />
-          <StatCell n={stats.fixed} label="fixed and verified" />
-          <StatCell n={stats.rejected} label="repairs rejected" />
-          <StatCell n={stats.silent} label="late, no reason given" tone="crit" />
-        </div>
-      </div>
+            <div className="flex items-center gap-2">
+              {/* Both languages stay on screen. A toggle that shows only
+                  the other one asks the person who cannot read the
+                  current language to guess what the button does. */}
+              <div className="flex overflow-hidden rounded-full border border-brandink/25">
+                {(["kn", "en"] as Lang[]).map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => onLang(code)}
+                    aria-pressed={lang === code}
+                    lang={code}
+                    className={`micro px-2.5 py-1 transition ${
+                      lang === code
+                        ? "bg-brandink text-brand"
+                        : "text-brandink/70 hover:text-brandink"
+                    }`}
+                  >
+                    {code === "kn" ? "ಕನ್ನಡ" : "EN"}
+                  </button>
+                ))}
+              </div>
 
-      {/* Stage machinery, and we say so on it rather than hiding it. */}
-      <div className="border-t border-brandink/15">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2">
-          <button
-            className="micro flex items-center gap-1.5 text-brandink/70 transition hover:text-brandink"
-            onClick={() => setClockOpen((v) => !v)}
-            aria-expanded={clockOpen}
-          >
-            <span
-              className="inline-block transition-transform"
-              style={{ transform: clockOpen ? "rotate(90deg)" : "none" }}
-            >
-              ▸
-            </span>
-            Demo clock
-          </button>
-
-          {clockOpen && (
-            <div className="flex flex-1 items-center gap-1.5">
               <button
-                className="micro rounded-[3px] bg-brandink/12 px-2.5 py-1.5 transition hover:bg-brandink/22"
-                onClick={() => onShift(1)}
+                onClick={() => setMenu((v) => !v)}
+                aria-expanded={menu}
+                aria-label={t("Menu")}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-brandink/25 text-brandink transition hover:border-brandink/60"
               >
-                +1 hour
-              </button>
-              <button
-                className="micro rounded-[3px] bg-brandink/12 px-2.5 py-1.5 transition hover:bg-brandink/22"
-                onClick={() => onShift(24)}
-              >
-                +24 hours
-              </button>
-              <button
-                className="micro rounded-[3px] px-2 py-1.5 text-brandink/60 transition hover:text-brandink"
-                onClick={onReset}
-              >
-                reset
+                <MenuIcon size={17} />
               </button>
             </div>
-          )}
+          </div>
 
-          {offset > 0 && (
-            <span className="micro figure ml-auto text-brandink/60">+{offset}h simulated</span>
-          )}
+          <div className="mt-3 grid grid-cols-5 gap-1">
+            {CELLS.map(({ key, Icon, short, full }) => (
+              <div
+                key={key}
+                className="flex flex-col items-center gap-0.5"
+                title={t(full)}
+              >
+                <span className={`flex items-center gap-1 ${TONE[key] ?? "text-brandink/55"}`}>
+                  <Icon size={13} />
+                </span>
+                <span
+                  lang="en"
+                  className={`display figure text-[24px] leading-none font-semibold ${
+                    TONE[key] ?? "text-brandink"
+                  }`}
+                >
+                  {stats[key as keyof Stats]}
+                </span>
+                <span className="micro text-center leading-tight text-brandink/60">
+                  {t(short)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {menu && (
+        <>
+          <button
+            className="fixed inset-0 z-20 cursor-default bg-ink/35"
+            aria-label={t("Close")}
+            onClick={() => setMenu(false)}
+          />
+          {/* Stage machinery, and we say so on it rather than hiding it. */}
+          <div className="rise absolute inset-x-0 top-full z-30 border-t border-brandink/20 bg-brand">
+            <div className="mx-auto w-full max-w-2xl px-4 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[13px] text-brandink/70">
+                  {t("Gram Panchayat asset ledger")}
+                </p>
+                <span
+                  className="micro inline-flex shrink-0 items-center gap-1.5 text-brandink/70"
+                  title={t(
+                    online
+                      ? "Reading the live ledger from server.py"
+                      : "No server reachable. Showing the seed ledger."
+                  )}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-ok" : "bg-late"}`} />
+                  {t(online ? "server" : "offline")}
+                </span>
+              </div>
+
+              <p className="micro mt-4 mb-1.5 text-brandink/50">{t("Role")}</p>
+              <div className="flex gap-1.5">
+                {[false, true].map((asStaff) => (
+                  <button
+                    key={String(asStaff)}
+                    onClick={() => staff !== asStaff && onToggleRole()}
+                    aria-pressed={staff === asStaff}
+                    className={`${chip} ${
+                      staff === asStaff ? "bg-brandink text-brand" : "text-brandink/80"
+                    }`}
+                  >
+                    {t(asStaff ? "Panchayat staff" : "Resident")}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 mb-1.5 flex items-baseline justify-between">
+                <p className="micro text-brandink/50">{t("Demo clock")}</p>
+                {offset > 0 && (
+                  <span lang="en" className="micro figure text-brandink/60">
+                    +{offset}h {t("simulated")}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-1.5">
+                <button className={`${chip} text-brandink/80`} onClick={() => onShift(1)}>
+                  {t("+1 hour")}
+                </button>
+                <button className={`${chip} text-brandink/80`} onClick={() => onShift(24)}>
+                  {t("+24 hours")}
+                </button>
+                <button
+                  className="micro px-2 py-1.5 text-brandink/55 transition hover:text-brandink"
+                  onClick={onReset}
+                >
+                  {t("reset")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 }

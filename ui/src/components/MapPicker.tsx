@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useT } from "../i18n";
+import { CrosshairIcon } from "./Bits";
 
 /* Put the pin on a map rather than guessing from a list.
  *
@@ -84,6 +86,8 @@ export default function MapPicker({
   const marker = useRef<L.Marker | null>(null);
   const [ready, setReady] = useState<"loading" | "ok" | "failed">("loading");
   const [locating, setLocating] = useState(false);
+  const [denied, setDenied] = useState(false);
+  const { t } = useT();
 
   function place(lat: number, lng: number, recentre: boolean) {
     const spot: Spot = { lat, lng, name: null };
@@ -156,31 +160,66 @@ export default function MapPicker({
   }, []);
 
   function findMe() {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setDenied(true);
+      return;
+    }
     setLocating(true);
+    setDenied(false);
     navigator.geolocation.getCurrentPosition(
       (p) => {
         place(p.coords.latitude, p.coords.longitude, true);
         setLocating(false);
       },
-      () => setLocating(false),
+      () => {
+        // Refused, or no fix. Either way the map is still usable by
+        // hand, so say that instead of showing an error.
+        setLocating(false);
+        setDenied(true);
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   }
 
-  const label = locating
-    ? "Finding your location…"
-    : value
-      ? value.name ?? `Pinned at ${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}`
-      : "Drop the pin on what is broken";
+  const label = value
+    ? value.name
+      ? t(value.name)
+      : `${t("Pinned at")} ${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}`
+    : t("Drop the pin on what is broken");
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 border border-rule border-b-0 bg-sunken px-3 py-2.5">
-        <span className="figure min-w-0 truncate text-[13.5px] text-ink2">{label}</span>
-        <button className="micro shrink-0 text-stamp" onClick={findMe}>
-          {value ? "Retry" : "Use GPS"}
-        </button>
+      {/* The one control on this screen that saves a person any work,
+          so it is a button and not a link in the corner. Once there is
+          a pin it steps back to an outline, because by then the map is
+          the thing to look at. */}
+      <button
+        onClick={findMe}
+        disabled={locating}
+        className={`flex w-full items-center justify-center gap-2 border py-3 text-[15px] font-semibold transition ${
+          value
+            ? "border-rule bg-surface text-ink2 hover:border-teal hover:text-ink"
+            : "border-teal bg-teal text-tealink hover:opacity-90"
+        } disabled:opacity-60`}
+      >
+        <CrosshairIcon size={18} />
+        {locating
+          ? t("Finding your location…")
+          : value
+            ? t("Locate me again")
+            : t("Use my location")}
+      </button>
+
+      {denied && (
+        <p className="border border-rule border-t-0 bg-sunken px-3 py-2 text-[12.5px] text-late">
+          {t("Location is off. Drop the pin by hand.")}
+        </p>
+      )}
+
+      <div className="flex items-center gap-3 border border-rule border-b-0 border-t-0 bg-sunken px-3 py-2.5">
+        <span className="figure min-w-0 flex-1 truncate text-[13.5px] text-ink2">
+          {label}
+        </span>
       </div>
 
       <div
@@ -190,7 +229,7 @@ export default function MapPicker({
       />
 
       {ready === "ok" && (
-        <p className="micro mt-1.5 text-ink3">Drag the pin to the exact spot</p>
+        <p className="micro mt-1.5 text-ink3">{t("Drag the pin to the exact spot")}</p>
       )}
 
       {/* No tiles, no map. Put the list back and say why in one line,
@@ -198,7 +237,7 @@ export default function MapPicker({
       {ready === "failed" && (
         <div className="border border-rule border-t-0 bg-surface p-3">
           <p className="text-[13px] text-crit">
-            Map could not load. Pick the nearest landmark instead.
+            {t("Map could not load. Pick the nearest landmark instead.")}
           </p>
           <select
             id="landmark-select"
@@ -209,10 +248,10 @@ export default function MapPicker({
               if (spot) onChange({ ...spot });
             }}
           >
-            <option value="">Or pick the nearest landmark</option>
+            <option value="">{t("Or pick the nearest landmark")}</option>
             {LANDMARKS.map((l) => (
               <option key={l.name} value={l.name}>
-                {l.name}
+                {t(l.name)}
               </option>
             ))}
           </select>

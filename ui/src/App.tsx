@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "./components/Header";
 import Entry from "./components/Entry";
-import ReportForm from "./components/ReportForm";
+import ReportForm, { type Filed } from "./components/ReportForm";
 import VoiceBubble from "./components/VoiceBubble";
 import { deskOrder, ledgerOrder, tally, type Report } from "./data";
 import { loadReports, resetClock, shiftClock } from "./api";
+import { useT } from "./i18n";
 
 type Tab = "report" | "ledger" | "desk";
 
-const TABS: { id: Tab; label: string; kn: string }[] = [
-  { id: "report", label: "Report", kn: "ದೂರು" },
-  { id: "ledger", label: "Ledger", kn: "ದಾಖಲೆ" },
-  { id: "desk", label: "Desk", kn: "ಮೇಜು" }
+const TABS: { id: Tab; label: string }[] = [
+  { id: "report", label: "Report" },
+  { id: "ledger", label: "Ledger" },
+  { id: "desk", label: "Desk" }
 ];
 
 export default function App() {
@@ -26,10 +27,15 @@ export default function App() {
      laptop with no network. */
   const [offset, setOffset] = useState(0);
 
-  const [kannada, setKannada] = useState(false);
+  const { lang, setLang, t } = useT();
   const [staff, setStaff] = useState(false);
   const [note, setNote] = useState("");
   const [speakSignal, setSpeakSignal] = useState(0);
+
+  /* What a filed report leaves behind. It is shown at the top of the
+     ledger rather than on a screen of its own, because the number only
+     means something next to the row it created. */
+  const [filed, setFiled] = useState<Filed | null>(null);
 
   const refresh = useCallback(async () => {
     const live = await loadReports();
@@ -76,8 +82,8 @@ export default function App() {
         online={online}
         onShift={shift}
         onReset={reset}
-        kannada={kannada}
-        onToggleKannada={() => setKannada((v) => !v)}
+        lang={lang}
+        onLang={setLang}
         staff={staff}
         onToggleRole={() => setStaff((v) => !v)}
       />
@@ -89,7 +95,11 @@ export default function App() {
             note={note}
             onNote={setNote}
             online={online}
-            onFiled={refresh}
+            onFiled={(receipt) => {
+              setFiled(receipt);
+              setTab("ledger");
+              refresh();
+            }}
             onSpeak={() => setSpeakSignal((n) => n + 1)}
           />
         )}
@@ -98,15 +108,16 @@ export default function App() {
           <div className="mx-auto max-w-2xl">
             <div className="px-4 pt-5 pb-3">
               <h2 className="display text-[24px] leading-tight font-semibold">
-                Public ledger
+                {t("Public ledger")}
               </h2>
               <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
-                Every report in this Panchayat, newest first, with its deadline
-                running in the open. Nothing here is hidden from the people who
-                filed it.
+                {t(
+                  "Every report in this Panchayat, newest first, with its deadline running in the open. Nothing here is hidden from the people who filed it."
+                )}
               </p>
             </div>
-            <Rows reports={ledger} offset={offset} kannada={kannada} loading={loading} />
+            {filed && <Receipt filed={filed} onClose={() => setFiled(null)} />}
+            <Rows reports={ledger} offset={offset} loading={loading} />
           </div>
         )}
 
@@ -114,39 +125,40 @@ export default function App() {
           <div className="mx-auto max-w-2xl">
             <div className="px-4 pt-5 pb-3">
               <h2 className="display text-[24px] leading-tight font-semibold">
-                Panchayat desk
+                {t("Panchayat desk")}
               </h2>
               <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
-                Sorted by what breaches soonest, not by date. A job closes only
-                when the resident who reported it confirms.
+                {t(
+                  "Sorted by what breaches soonest, not by date. A job closes only when the resident who reported it confirms."
+                )}
               </p>
               {stats.silent > 0 && (
                 <p className="micro mt-3 inline-block bg-critwash px-2 py-1.5 text-crit">
-                  {stats.silent} past deadline with nothing said
+                  {stats.silent} {t("past deadline with nothing said")}
                 </p>
               )}
             </div>
-            <Rows reports={desk} offset={offset} kannada={kannada} loading={loading} />
+            <Rows reports={desk} offset={offset} loading={loading} />
           </div>
         )}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-surface">
-        <div className="mx-auto flex w-full max-w-2xl">
-          {TABS.map((t) => {
-            const on = tab === t.id;
+      <nav className="fixed inset-x-0 bottom-0 z-30 h-[var(--nav-h)] border-t border-rule bg-surface">
+        <div className="mx-auto flex h-full w-full max-w-2xl">
+          {TABS.map((tb) => {
+            const on = tab === tb.id;
             return (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={tb.id}
+                onClick={() => setTab(tb.id)}
                 aria-current={on ? "page" : undefined}
-                className={`flex-1 border-t-[3px] px-2 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-[14px] font-semibold transition ${
+                className={`flex-1 border-t-[3px] px-2 pb-[env(safe-area-inset-bottom)] text-[14px] font-semibold transition ${
                   on
                     ? "border-teal text-ink"
                     : "border-transparent text-ink3 hover:text-ink2"
                 }`}
               >
-                {kannada ? t.kn : t.label}
+                {t(tb.label)}
               </button>
             );
           })}
@@ -154,7 +166,6 @@ export default function App() {
       </nav>
 
       <VoiceBubble
-        kannada={kannada}
         openSignal={speakSignal}
         onText={(text) => {
           setNote((n) => (n ? `${n.trim()} ${text}` : text));
@@ -165,17 +176,47 @@ export default function App() {
   );
 }
 
+/* The one thing a person walks away with. It carries the number they
+   would quote at the Panchayat office and the sentence that explains
+   what the number now does on its own. */
+function Receipt({ filed, onClose }: { filed: Filed; onClose: () => void }) {
+  const { t } = useT();
+
+  return (
+    <div className="rise mx-4 mt-1 mb-4 border-t-[3px] border-ok bg-surface px-4 py-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="micro text-ok">
+          {t(filed.merged ? "Added to a report already open" : "Report filed")}
+        </p>
+        <button className="micro text-stamp" onClick={onClose}>
+          {t("Close")}
+        </button>
+      </div>
+      <p lang="en" className="display figure mt-1 text-[30px] leading-none font-semibold">
+        {filed.id}
+      </p>
+      <p className="mt-2 max-w-[46ch] text-[13.5px] text-ink2">
+        {t(
+          filed.merged
+            ? "Someone nearby had already reported this. Yours was added to theirs, which carries more weight than a separate one."
+            : "The clock started the moment you sent this. It runs whether or not anyone opens it, and only you can close it."
+        )}
+      </p>
+    </div>
+  );
+}
+
 function Rows({
   reports,
   offset,
-  kannada,
   loading
 }: {
   reports: Report[];
   offset: number;
-  kannada: boolean;
   loading: boolean;
 }) {
+  const { t } = useT();
+
   if (loading) {
     return (
       <div className="flex flex-col gap-px border-y border-rulesoft">
@@ -188,14 +229,14 @@ function Rows({
   if (reports.length === 0) {
     return (
       <p className="mx-4 my-6 border border-dashed border-rule px-4 py-10 text-center text-[14px] text-ink3">
-        No reports yet. The first one starts the ledger.
+        {t("No reports yet. The first one starts the ledger.")}
       </p>
     );
   }
   return (
     <div className="flex flex-col gap-px border-y border-rulesoft">
       {reports.map((r, i) => (
-        <Entry key={r.id} report={r} offset={offset} kannada={kannada} index={i} />
+        <Entry key={r.id} report={r} offset={offset} index={i} />
       ))}
     </div>
   );

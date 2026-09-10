@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicIcon } from "./Bits";
+import { useT, type Lang } from "../i18n";
 
 /* A bubble you can put wherever your thumb is.
  *
@@ -16,6 +17,15 @@ import { MicIcon } from "./Bits";
  * and gets text back, so this is the one part of the app that needs a
  * signal. Where it cannot work there is no bubble, rather than a button
  * that does nothing.
+ *
+ * The language you speak is asked separately from the language the app
+ * is in. Those are not the same question: plenty of people here read a
+ * form in English and would never dictate one in it, and the recogniser
+ * has to be told which of the two before it hears a word. Whatever it
+ * hears goes into the note as it was said. Kannada speech becomes
+ * Kannada text, not an English translation of it, because the clerk who
+ * reads the note reads Kannada and because a resident's own words are
+ * the part of a complaint that should survive.
  */
 
 type Rec = {
@@ -33,6 +43,7 @@ const Engine: (new () => Rec) | undefined =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 const KEY = "sethu.bubble";
+const SPEECH_KEY = "sethu.speech";
 const SIZE = 58;
 const EDGE = 12;
 
@@ -44,14 +55,13 @@ function clamp(x: number, y: number) {
 }
 
 export default function VoiceBubble({
-  kannada,
   onText,
   openSignal
 }: {
-  kannada: boolean;
   onText: (text: string) => void;
   openSignal: number;
 }) {
+  const { lang, t } = useT();
   const [pos, setPos] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || "null");
@@ -65,6 +75,29 @@ export default function VoiceBubble({
   const [open, setOpen] = useState(false);
   const [heard, setHeard] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
+
+  /* Remembered, because the person who dictates in Kannada today will
+     dictate in Kannada tomorrow. Until they say otherwise, the language
+     they are reading the form in is the best guess at the language they
+     will speak — so switching the app to Kannada switches the recogniser
+     too, and only an explicit choice here stops it following. */
+  const picked = useRef(false);
+  const [speech, setSpeech] = useState<Lang>(() => {
+    try {
+      const saved = localStorage.getItem(SPEECH_KEY);
+      if (saved === "kn" || saved === "en") {
+        picked.current = true;
+        return saved;
+      }
+    } catch {
+      /* storage off */
+    }
+    return lang;
+  });
+
+  useEffect(() => {
+    if (!picked.current) setSpeech(lang);
+  }, [lang]);
 
   const session = useRef<Rec | null>(null);
   const moved = useRef(0);
@@ -90,7 +123,7 @@ export default function VoiceBubble({
 
   const listen = useCallback(() => {
     if (!Engine) {
-      setProblem("This browser cannot listen. Type it instead.");
+      setProblem(t("This browser cannot listen. Type it instead."));
       setOpen(true);
       return;
     }
@@ -99,7 +132,7 @@ export default function VoiceBubble({
     setOpen(true);
 
     const rec = new Engine();
-    rec.lang = kannada ? "kn-IN" : "en-IN";
+    rec.lang = speech === "kn" ? "kn-IN" : "en-IN";
     rec.continuous = true;
     rec.interimResults = true;
 
@@ -116,10 +149,10 @@ export default function VoiceBubble({
     rec.onerror = (e: any) => {
       setProblem(
         e.error === "not-allowed"
-          ? "Microphone blocked. Allow it in your browser settings."
+          ? t("Microphone blocked. Allow it in your browser settings.")
           : e.error === "network"
-            ? "Speech needs a signal. Type it instead."
-            : "Did not catch that."
+            ? t("Speech needs a signal. Type it instead.")
+            : t("Did not catch that.")
       );
     };
     rec.onend = () => {
@@ -130,9 +163,9 @@ export default function VoiceBubble({
       rec.start();
       session.current = rec;
     } catch {
-      setProblem("Could not start the microphone.");
+      setProblem(t("Could not start the microphone."));
     }
-  }, [kannada]);
+  }, [speech, t]);
 
   // The form's own "Speak instead of typing" button opens the same sheet.
   useEffect(() => {
@@ -140,6 +173,29 @@ export default function VoiceBubble({
   }, [openSignal, listen]);
 
   useEffect(() => () => stop(), [stop]);
+
+  /* Changing the language while the sheet is open has to restart the
+     recogniser; the engine reads `lang` once, when it starts. */
+  function speakIn(next: Lang) {
+    picked.current = true;
+    setSpeech(next);
+    try {
+      localStorage.setItem(SPEECH_KEY, next);
+    } catch {
+      /* storage off; it just asks again next time. */
+    }
+    if (session.current) {
+      const rec = session.current;
+      session.current = null;
+      try {
+        rec.stop();
+      } catch {
+        /* already stopped */
+      }
+      // Give the engine a moment to release the microphone.
+      window.setTimeout(() => listen(), 220);
+    }
+  }
 
   function onPointerDown(e: React.PointerEvent) {
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -176,7 +232,7 @@ export default function VoiceBubble({
   return (
     <>
       <button
-        aria-label={live ? "Stop listening" : "Speak instead of typing"}
+        aria-label={live ? t("Not listening") : t("Speak instead of typing")}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -222,22 +278,47 @@ export default function VoiceBubble({
                 ))}
               </span>
               <p className="micro flex-1 text-ink2">
-                {problem ? "Not listening" : live ? "Listening" : "Ready"}
+                {problem ? t("Not listening") : live ? t("Listening") : t("Ready")}
               </p>
               <button className="micro text-stamp" onClick={stop}>
-                Close
+                {t("Close")}
               </button>
             </div>
 
-            <p className="mt-3 min-h-[3.5rem] text-[16px] leading-snug">
+            {/* Asked here rather than in settings, because this is the
+                moment a person finds out it matters. */}
+            <div className="mt-3 flex items-center gap-2">
+              <span className="micro shrink-0 text-ink3">{t("I am speaking")}</span>
+              <div className="flex gap-1">
+                {(["kn", "en"] as Lang[]).map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => speakIn(code)}
+                    aria-pressed={speech === code}
+                    className={`micro border px-2.5 py-1 transition ${
+                      speech === code
+                        ? "border-teal bg-teal text-tealink"
+                        : "border-rule text-ink2 hover:border-teal/60"
+                    }`}
+                  >
+                    {code === "kn" ? "ಕನ್ನಡ" : "English"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <p
+              className="mt-3 min-h-[3.5rem] text-[16px] leading-snug"
+              lang={speech === "kn" ? "kn" : "en"}
+            >
               {problem ? (
                 <span className="text-crit">{problem}</span>
               ) : heard ? (
                 heard
               ) : (
                 <span className="text-ink3">
-                  {kannada
-                    ? "ಈಗ ಮಾತನಾಡಿ. ಏನು ಹಾಳಾಗಿದೆ ಎಂದು ಹೇಳಿ."
+                  {speech === "kn"
+                    ? "ಈಗ ಮಾತನಾಡಿ. ಏನು ಹಾಳಾಗಿದೆ ಮತ್ತು ಎಲ್ಲಿ ಎಂದು ಹೇಳಿ."
                     : "Speak now. Say what is broken and where."}
                 </span>
               )}
@@ -252,21 +333,21 @@ export default function VoiceBubble({
                   stop();
                 }}
               >
-                Add to the report
+                {t("Add to the report")}
               </button>
               {!live && !problem && (
                 <button
                   className="border border-rule px-4 text-[15px] font-semibold text-ink2"
                   onClick={listen}
                 >
-                  Again
+                  {t("Again")}
                 </button>
               )}
             </div>
 
             <p className="mt-3 text-[12px] text-ink3">
-              Dictation needs a signal. The photo, the deadline and the send do
-              not.
+              {t("Your words go in exactly as you say them.")}{" "}
+              {t("Dictation needs a signal. The photo, the deadline and the send do not.")}
             </p>
           </div>
         </div>
