@@ -43,6 +43,7 @@ export interface Filed {
 export default function ReportForm({
   nextId,
   onSpeak,
+  onPhoto,
   note,
   onNote,
   online,
@@ -50,6 +51,7 @@ export default function ReportForm({
 }: {
   nextId: string;
   onSpeak: () => void;
+  onPhoto: (has: boolean) => void;
   note: string;
   onNote: (v: string) => void;
   online: boolean;
@@ -93,6 +95,7 @@ export default function ReportForm({
     setStep(1);
     setIssue(null);
     setPhoto(null);
+    onPhoto(false);
     setPin(null);
     setPlace("Neither");
     onNote("");
@@ -112,6 +115,7 @@ export default function ReportForm({
         canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
         const src = canvas.toDataURL("image/jpeg", 0.62);
         setPhoto({ src, kb: Math.round((src.length * 0.75) / 1024) });
+        onPhoto(true);
       };
       img.src = String(reader.result);
     };

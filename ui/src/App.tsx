@@ -33,6 +33,13 @@ export default function App() {
   const [note, setNote] = useState("");
   const [speakSignal, setSpeakSignal] = useState(0);
 
+  /* The microphone dictates into the note on the report form, so it has
+     no business floating over the ledger. And it stays away until there
+     is a photo: the photo is the thing a report cannot be filed
+     without, and a mic hovering over that screen invites someone to
+     start talking instead. */
+  const [hasPhoto, setHasPhoto] = useState(false);
+
   /* What a filed report leaves behind. It is shown at the top of the
      ledger rather than on a screen of its own, because the number only
      means something next to the row it created. */
@@ -102,6 +109,7 @@ export default function App() {
               refresh();
             }}
             onSpeak={() => setSpeakSignal((n) => n + 1)}
+            onPhoto={setHasPhoto}
           />
         )}
 
@@ -161,13 +169,12 @@ export default function App() {
         </div>
       </nav>
 
-      <VoiceBubble
-        openSignal={speakSignal}
-        onText={(text) => {
-          setNote((n) => (n ? `${n.trim()} ${text}` : text));
-          setTab("report");
-        }}
-      />
+      {tab === "report" && hasPhoto && (
+        <VoiceBubble
+          openSignal={speakSignal}
+          onText={(text) => setNote((n) => (n ? `${n.trim()} ${text}` : text))}
+        />
+      )}
     </div>
   );
 }

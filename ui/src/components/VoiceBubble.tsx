@@ -104,7 +104,7 @@ export default function VoiceBubble({
   const grab = useRef({ dx: 0, dy: 0 });
 
   useEffect(() => {
-    setPos((p) => (p.x === 9999 ? clamp(window.innerWidth - SIZE - 18, window.innerHeight - 190) : p));
+    setPos((p) => (p.x === 9999 ? clamp(window.innerWidth - SIZE - 18, window.innerHeight - 240) : p));
     const onResize = () => setPos((p) => clamp(p.x, p.y));
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -167,9 +167,16 @@ export default function VoiceBubble({
     }
   }, [speech, t]);
 
-  // The form's own "Speak instead of typing" button opens the same sheet.
+  /* The form's own "Speak instead of typing" button opens the same
+     sheet. It is a counter rather than a boolean so that pressing it
+     twice reopens; the ref is what stops a fresh mount from treating an
+     old count as a fresh press and switching the microphone on by
+     itself the moment a photo appears. */
+  const lastSignal = useRef(openSignal);
   useEffect(() => {
-    if (openSignal > 0) listen();
+    if (openSignal === lastSignal.current) return;
+    lastSignal.current = openSignal;
+    listen();
   }, [openSignal, listen]);
 
   useEffect(() => () => stop(), [stop]);
