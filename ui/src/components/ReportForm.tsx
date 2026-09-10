@@ -120,12 +120,19 @@ export default function ReportForm({
 
   const TITLES = ["Photo", "What is broken?", "Where is it?"];
   const HINTS = [
-    "Optional, but it is what stops an argument later.",
+    "The photo is the proof. Without it, a report is one person's word.",
     "The choice sets the deadline.",
     "GPS first. Move the pin if it is wrong."
   ];
 
   const blocked = step === 2 && !issue;
+
+  /* The photo is not a nicety here. A report with one is a thing an
+     office has to answer; a report without one is a resident's word
+     against a clerk's, which is the argument this whole ledger exists
+     to end. So there is no way past this screen except to take one,
+     and the button that would have skipped it opens the camera. */
+  const needsPhoto = step === 1 && !photo;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -178,7 +185,7 @@ export default function ReportForm({
               </div>
             ) : (
               <button
-                className="w-full rounded-[var(--r-ctl)] border-2 border-dashed border-rule bg-sunken py-16 text-[15px] font-medium text-ink2 transition hover:border-teal hover:text-ink"
+                className="flex min-h-[38vh] w-full items-center justify-center rounded-[var(--r-ctl)] border-2 border-dashed border-rule bg-sunken px-4 text-[15px] font-medium text-ink2 transition hover:border-teal hover:text-ink"
                 onClick={() => fileRef.current?.click()}
               >
                 {t("Take a photo, or choose one")}
@@ -296,12 +303,17 @@ export default function ReportForm({
           )}
           <button
             disabled={blocked || sending}
-            onClick={() => (step < SCREENS ? setStep((n) => n + 1) : send())}
+            onClick={() => {
+              if (needsPhoto) return fileRef.current?.click();
+              return step < SCREENS ? setStep((n) => n + 1) : send();
+            }}
             className="flex-1 rounded-[var(--r-ctl)] bg-teal py-3.5 text-[16px] font-semibold text-tealink shadow-[var(--shadow-card)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink3 disabled:shadow-none"
           >
-            {step < SCREENS
-              ? t(step === 1 && !photo ? "Skip the photo" : "Next")
-              : t(sending ? "Sending…" : "Send report")}
+            {needsPhoto
+              ? t("Upload photo")
+              : step < SCREENS
+                ? t("Next")
+                : t(sending ? "Sending…" : "Send report")}
           </button>
         </div>
         {blocked && (

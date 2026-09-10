@@ -63,8 +63,8 @@ const KN: Record<string, string> = {
   "About twenty seconds. The photo is shrunk on your phone so it sends on a weak signal.":
     "ಸುಮಾರು ಇಪ್ಪತ್ತು ಸೆಕೆಂಡು. ಫೋಟೋವನ್ನು ನಿಮ್ಮ ಫೋನಿನಲ್ಲೇ ಚಿಕ್ಕದು ಮಾಡಲಾಗುತ್ತದೆ, ಹಾಗಾಗಿ ಕಡಿಮೆ ನೆಟ್‌ವರ್ಕ್‌ನಲ್ಲೂ ಹೋಗುತ್ತದೆ.",
   Photo: "ಫೋಟೋ",
-  "Optional, but it is what stops an argument later.":
-    "ಕಡ್ಡಾಯವಲ್ಲ, ಆದರೆ ಮುಂದೆ ವಾದ ಬರದಂತೆ ತಡೆಯುವುದು ಇದೇ.",
+  "The photo is the proof. Without it, a report is one person's word.":
+    "ಫೋಟೋವೇ ಸಾಕ್ಷಿ. ಅದಿಲ್ಲದೆ ದೂರು ಒಬ್ಬರ ಮಾತಷ್ಟೇ.",
   "Take a photo, or choose one": "ಫೋಟೋ ತೆಗೆಯಿರಿ, ಅಥವಾ ಒಂದನ್ನು ಆರಿಸಿ",
   Retake: "ಮತ್ತೆ ತೆಗೆಯಿರಿ",
   "small enough for a weak signal": "ಕಡಿಮೆ ನೆಟ್‌ವರ್ಕ್‌ಗೂ ಸಾಕು",
@@ -106,7 +106,7 @@ const KN: Record<string, string> = {
   "File another": "ಇನ್ನೊಂದು ದೂರು",
   Back: "ಹಿಂದೆ",
   Next: "ಮುಂದೆ",
-  "Skip the photo": "ಫೋಟೋ ಬೇಡ",
+  "Upload photo": "ಫೋಟೋ ಸೇರಿಸಿ",
 
   // ---------- the map ----------
   "Use my location": "ನನ್ನ ಸ್ಥಳ ಬಳಸಿ",
