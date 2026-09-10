@@ -3,105 +3,132 @@
 /* ------------------------------------------------------------------
    Sethu — a Gram Panchayat asset ledger.
 
-   The object this replaces is a bound register on a desk in the
-   Panchayat office: ruled paper, a red margin line down the left of
-   anything overdue, figures in columns. So the palette is register
-   stock rather than warm paper, entries are ruled rows rather than
-   floating cards, and the one saturated colour in the whole app is
-   the blue of the stamp pad every government form carries.
+   This started out looking like the bound register it replaces: ruled
+   rows, hairlines, a serif with a slant. Honest, but it read as a
+   document, and the people who have to use it standing in a lane are
+   holding a phone, not a ledger. So it now looks like the apps already
+   on that phone: a light ground, white cards with a soft lift, round
+   controls big enough for a thumb, and one warm accent.
 
-   Semantic colour (inside the deadline / past it / past it twice) is
-   kept separate from that accent, so urgency never competes with
-   chrome for attention.
+   What did not change is the part the product rests on. Semantic colour
+   — inside the deadline, past it, past it with nobody explaining — is
+   still kept away from the brand and the accent, so urgency never has
+   to compete with chrome for attention.
    ------------------------------------------------------------------ */
 
 :root {
   color-scheme: light;
 
-  --c-ground: #e7ebe7;      /* register stock, green-biased neutral */
-  --c-surface: #fcfdfb;
-  --c-sunken: #dfe5e0;
-  --c-ink: #131b19;
-  --c-ink-2: #4a5551;
-  --c-ink-3: #6d7873;
-  --c-rule: #c6d0ca;
-  --c-rule-soft: #dde3de;
+  --c-ground: #eef1f6;      /* the app's ground, a cool light neutral */
+  --c-surface: #ffffff;     /* cards */
+  --c-sunken: #f3f5f9;      /* fields and wells inside a card */
+  --c-ink: #141821;
+  --c-ink-2: #576073;
+  --c-ink-3: #8d95a6;
+  --c-rule: #e3e7ef;
+  --c-rule-soft: #eef1f6;
 
-  --c-brand: #0e4c55;       /* the header band and the nav */
-  --c-brand-ink: #f2f6f3;
-  --c-teal: #0e4c55;        /* accent: primary action, active rules */
-  --c-teal-ink: #f2f6f3;
-  --c-stamp: #1e3f8f;       /* the one saturated spend: department stamps */
-  --c-stamp-wash: #e4e9f5;
+  --c-brand: #123a45;       /* the header band */
+  --c-brand-ink: #ffffff;
+  --c-brand-soft: #1c5364;  /* a lighter step inside the band */
 
-  --c-ok: #2e6b45;          /* inside the deadline */
-  --c-ok-wash: #d9e6dd;
-  --c-late: #8f5c0c;        /* past it */
-  --c-late-wash: #f2e6cf;
-  --c-crit: #a32a1e;        /* past it twice, or nobody has explained */
-  --c-crit-wash: #f4ddd9;
+  --c-teal: #0d9488;        /* primary action */
+  --c-teal-ink: #ffffff;
+  --c-teal-wash: #d8f2ee;
 
-  --shadow-lift: 0 1px 2px rgb(19 27 25 / 0.05), 0 8px 24px -12px rgb(19 27 25 / 0.18);
+  --c-amber: #f59e0b;       /* the warm accent: one spend, on highlights */
+  --c-amber-wash: #fdf1dc;
+
+  --c-stamp: #4f46e5;       /* department stamps */
+  --c-stamp-wash: #eaeaff;
+
+  --c-ok: #12805c;          /* inside the deadline */
+  --c-ok-wash: #dff3ea;
+  --c-late: #c2760a;        /* past it */
+  --c-late-wash: #fdf0da;
+  --c-crit: #d23b30;        /* past it twice, or nobody has explained */
+  --c-crit-wash: #fde7e4;
+
+  --r-card: 18px;
+  --r-ctl: 13px;
+  --shadow-card: 0 1px 2px rgb(20 24 33 / 0.04), 0 6px 16px -8px rgb(20 24 33 / 0.14);
+  --shadow-lift: 0 2px 6px rgb(20 24 33 / 0.08), 0 16px 32px -16px rgb(20 24 33 / 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --c-ground: #0e1412;
-    --c-surface: #171f1c;
-    --c-sunken: #131a18;
-    --c-ink: #e6ece8;
-    --c-ink-2: #a3afaa;
-    --c-ink-3: #7d8985;
-    --c-rule: #2b3733;
-    --c-rule-soft: #222c29;
+    --c-ground: #0c1016;
+    --c-surface: #161b24;
+    --c-sunken: #1d2430;
+    --c-ink: #eaeef6;
+    --c-ink-2: #a3adbf;
+    --c-ink-3: #79839a;
+    --c-rule: #29313f;
+    --c-rule-soft: #212936;
 
-    --c-brand: #10353a;
-    --c-brand-ink: #cfe4e6;
-    --c-teal: #5fb4bb;
-    --c-teal-ink: #06211f;
-    --c-stamp: #8fabe8;
-    --c-stamp-wash: #1b2437;
+    --c-brand: #142c35;
+    --c-brand-ink: #eef6f7;
+    --c-brand-soft: #1e4756;
 
-    --c-ok: #6fbb8b;
-    --c-ok-wash: #16281d;
-    --c-late: #d9a24e;
-    --c-late-wash: #2c2113;
-    --c-crit: #e8867a;
-    --c-crit-wash: #2e1815;
+    --c-teal: #2dd4bf;
+    --c-teal-ink: #04211d;
+    --c-teal-wash: #10312e;
 
-    --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -14px rgb(0 0 0 / 0.7);
+    --c-amber: #fbbf24;
+    --c-amber-wash: #33260d;
+
+    --c-stamp: #a5a1ff;
+    --c-stamp-wash: #1e1c3b;
+
+    --c-ok: #4ade9c;
+    --c-ok-wash: #102a20;
+    --c-late: #f0b354;
+    --c-late-wash: #302312;
+    --c-crit: #f87171;
+    --c-crit-wash: #331817;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 8px rgb(0 0 0 / 0.55), 0 20px 40px -20px rgb(0 0 0 / 0.85);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --c-ground: #0e1412;
-  --c-surface: #171f1c;
-  --c-sunken: #131a18;
-  --c-ink: #e6ece8;
-  --c-ink-2: #a3afaa;
-  --c-ink-3: #7d8985;
-  --c-rule: #2b3733;
-  --c-rule-soft: #222c29;
+  --c-ground: #0c1016;
+  --c-surface: #161b24;
+  --c-sunken: #1d2430;
+  --c-ink: #eaeef6;
+  --c-ink-2: #a3adbf;
+  --c-ink-3: #79839a;
+  --c-rule: #29313f;
+  --c-rule-soft: #212936;
 
-  --c-brand: #10353a;
-  --c-brand-ink: #cfe4e6;
-  --c-teal: #5fb4bb;
-  --c-teal-ink: #06211f;
-  --c-stamp: #8fabe8;
-  --c-stamp-wash: #1b2437;
+  --c-brand: #142c35;
+  --c-brand-ink: #eef6f7;
+  --c-brand-soft: #1e4756;
 
-  --c-ok: #6fbb8b;
-  --c-ok-wash: #16281d;
-  --c-late: #d9a24e;
-  --c-late-wash: #2c2113;
-  --c-crit: #e8867a;
-  --c-crit-wash: #2e1815;
+  --c-teal: #2dd4bf;
+  --c-teal-ink: #04211d;
+  --c-teal-wash: #10312e;
 
-  --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -14px rgb(0 0 0 / 0.7);
+  --c-amber: #fbbf24;
+  --c-amber-wash: #33260d;
+
+  --c-stamp: #a5a1ff;
+  --c-stamp-wash: #1e1c3b;
+
+  --c-ok: #4ade9c;
+  --c-ok-wash: #102a20;
+  --c-late: #f0b354;
+  --c-late-wash: #302312;
+  --c-crit: #f87171;
+  --c-crit-wash: #331817;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(0 0 0 / 0.7);
+  --shadow-lift: 0 2px 8px rgb(0 0 0 / 0.55), 0 20px 40px -20px rgb(0 0 0 / 0.85);
 }
 
 @theme inline {
@@ -117,6 +144,10 @@
   --color-brandink: var(--c-brand-ink);
   --color-teal: var(--c-teal);
   --color-tealink: var(--c-teal-ink);
+  --color-brandsoft: var(--c-brand-soft);
+  --color-tealwash: var(--c-teal-wash);
+  --color-amber: var(--c-amber);
+  --color-amberwash: var(--c-amber-wash);
   --color-stamp: var(--c-stamp);
   --color-stampwash: var(--c-stamp-wash);
   --color-ok: var(--c-ok);
@@ -128,11 +159,13 @@
 
   /* The tab bar's height, so the report form's footer can sit exactly
      on top of it instead of guessing. */
-  --nav-h: calc(3.05rem + env(safe-area-inset-bottom));
+  --nav-h: calc(4rem + env(safe-area-inset-bottom));
 
-  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --radius-card: var(--r-card);
+  --radius-ctl: var(--r-ctl);
+
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display-kn: "Noto Serif Kannada", "Tunga", serif;
   --font-sans-kn: "Noto Sans Kannada", "Tunga", ui-sans-serif, sans-serif;
 }
 
@@ -157,31 +190,29 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Fraunces has an optical size axis and a "wonk" axis. Turning wonk on
-   at display sizes is what stops it reading as the default serif that
-   every generated page reaches for. */
+/* Headings get the tighter, heavier face; everything else stays on the
+   body face. The contrast is weight and tracking, not a second voice. */
 .display {
   font-family: var(--font-display);
-  font-variation-settings: "SOFT" 0, "WONK" 1;
-  font-style: italic;
-  letter-spacing: -0.015em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
-/* Kannada has no italic, and neither Fraunces nor Outfit carries a
-   single Kannada glyph. Left alone the browser falls back to whatever
-   it can find and then slants it by shearing the pixels, which on a
-   script this dense is not a style, it is a legibility problem. So
-   Kannada gets its own faces, upright, and a shade more line height
-   because the vowel marks sit above and below. */
+/* Neither Plus Jakarta nor Outfit carries a single Kannada glyph, so
+   left alone the browser falls back to whatever it can find and then
+   fakes the weight by smearing the strokes — on a script this dense
+   that is not a style, it is a legibility problem. Kannada gets its own
+   face, and a shade more line height because the vowel marks sit above
+   and below the line. */
 :lang(kn) {
   font-family: var(--font-sans-kn);
 }
 
 :lang(kn) .display {
-  font-family: var(--font-display-kn);
-  font-style: normal;
-  font-variation-settings: normal;
+  font-family: var(--font-sans-kn);
+  font-weight: 700;
+  letter-spacing: 0;
   line-height: 1.35;
 }
 
@@ -202,10 +233,18 @@ body {
 }
 
 .micro {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.045em;
   text-transform: uppercase;
+}
+
+/* The one card recipe. Everything that is its own object on the ground
+   uses it, so cards do not drift apart from each other. */
+.card {
+  background: var(--c-surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
 }
 
 /* The stat strip and the issue grid scroll sideways on a phone. Hide
@@ -224,9 +263,9 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--c-stamp);
+  outline: 2px solid var(--c-teal);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 8px;
 }
 
 @keyframes rise {

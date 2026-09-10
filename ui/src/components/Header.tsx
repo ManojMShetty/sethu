@@ -62,14 +62,14 @@ export default function Header({
   }, [menu]);
 
   const chip =
-    "micro border border-brandink/25 px-2.5 py-1.5 transition hover:border-brandink/60";
+    "micro rounded-full bg-brandink/12 px-3.5 py-2 transition hover:bg-brandink/22";
 
   return (
     <header className="sticky top-0 z-30 text-brandink">
-      <div className="relative z-30 bg-brand">
+      <div className="relative z-30 rounded-b-[26px] bg-brand">
         <div className="mx-auto w-full max-w-2xl px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 lang="en" className="display text-[25px] leading-none font-semibold">
+            <h1 lang="en" className="display text-[26px] leading-none">
               Sethu
             </h1>
 
@@ -77,14 +77,14 @@ export default function Header({
               {/* Both languages stay on screen. A toggle that shows only
                   the other one asks the person who cannot read the
                   current language to guess what the button does. */}
-              <div className="flex overflow-hidden rounded-full border border-brandink/25">
+              <div className="flex overflow-hidden rounded-full bg-brandink/12 p-0.5">
                 {(["kn", "en"] as Lang[]).map((code) => (
                   <button
                     key={code}
                     onClick={() => onLang(code)}
                     aria-pressed={lang === code}
                     lang={code}
-                    className={`micro px-2.5 py-1 transition ${
+                    className={`micro rounded-full px-2.5 py-1 transition ${
                       lang === code
                         ? "bg-brandink text-brand"
                         : "text-brandink/70 hover:text-brandink"
@@ -99,26 +99,26 @@ export default function Header({
                 onClick={() => setMenu((v) => !v)}
                 aria-expanded={menu}
                 aria-label={t("Menu")}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-brandink/25 text-brandink transition hover:border-brandink/60"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-brandink/12 text-brandink transition hover:bg-brandink/22"
               >
                 <MenuIcon size={17} />
               </button>
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-5 gap-1">
+          <div className="mt-3.5 grid grid-cols-5 gap-1.5">
             {CELLS.map(({ key, Icon, short, full }) => (
               <div
                 key={key}
-                className="flex flex-col items-center gap-0.5"
                 title={t(full)}
+                className="flex flex-col items-center gap-1 rounded-[14px] bg-brandsoft/55 px-1 py-2.5"
               >
-                <span className={`flex items-center gap-1 ${TONE[key] ?? "text-brandink/55"}`}>
-                  <Icon size={13} />
+                <span className={TONE[key] ?? "text-brandink/55"}>
+                  <Icon size={14} />
                 </span>
                 <span
                   lang="en"
-                  className={`display figure text-[24px] leading-none font-semibold ${
+                  className={`display figure text-[22px] leading-none ${
                     TONE[key] ?? "text-brandink"
                   }`}
                 >
@@ -141,7 +141,7 @@ export default function Header({
             onClick={() => setMenu(false)}
           />
           {/* Stage machinery, and we say so on it rather than hiding it. */}
-          <div className="rise absolute inset-x-0 top-full z-30 border-t border-brandink/20 bg-brand">
+          <div className="rise absolute inset-x-0 top-full z-30 rounded-b-[26px] bg-brand shadow-[var(--shadow-lift)]">
             <div className="mx-auto w-full max-w-2xl px-4 py-4">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-[13px] text-brandink/70">
@@ -168,7 +168,7 @@ export default function Header({
                     onClick={() => staff !== asStaff && onToggleRole()}
                     aria-pressed={staff === asStaff}
                     className={`${chip} ${
-                      staff === asStaff ? "bg-brandink text-brand" : "text-brandink/80"
+                      staff === asStaff ? "!bg-brandink text-brand" : "text-brandink/80"
                     }`}
                   >
                     {t(asStaff ? "Panchayat staff" : "Resident")}

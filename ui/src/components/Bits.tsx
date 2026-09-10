@@ -22,7 +22,9 @@ export function Chip({
   // neighbours is just a number and should not shout.
   const type = tone === "stamp" ? "micro" : "micro plain";
   return (
-    <span className={`${type} figure inline-flex items-center rounded-[2px] px-1.5 py-[3px] ${skin}`}>
+    <span
+      className={`${type} figure inline-flex items-center rounded-full px-2.5 py-1 ${skin}`}
+    >
       {children}
     </span>
   );
@@ -47,8 +49,8 @@ const TONE_TRACK = {
 } as const;
 
 /* The loudest object on an entry, because it is the idea the whole
-   product rests on. It is a ruled bar rather than a rounded pill: the
-   register it replaces drew straight lines. */
+   product rests on: a track that fills as the clock runs out, with the
+   figure it is counting sitting right on it. */
 export function DeadlineBar({
   d,
   left,
@@ -64,26 +66,32 @@ export function DeadlineBar({
   const width = done ? 100 : Math.round(d.elapsedRatio * 100);
 
   return (
-    <div className={`relative h-8 ${TONE_TRACK[tone]}`}>
+    <div className="mt-3">
       <div
-        className={`absolute inset-y-0 left-0 ${TONE_FILL[tone]} opacity-[0.22] transition-[width] duration-500 ease-out`}
-        style={{ width: `${width}%` }}
-      />
-      {!done && d.overdue && (
-        <div className={`absolute inset-y-0 right-0 w-[3px] ${TONE_FILL[tone]}`} />
-      )}
-      <div
-        className={`relative flex h-8 items-center justify-between px-3 text-[12.5px] font-semibold ${TONE_TEXT[tone]}`}
+        className={`flex items-baseline justify-between gap-3 text-[12.5px] font-semibold ${TONE_TEXT[tone]}`}
       >
         <span className="figure">{left}</span>
-        <span className="figure tracking-wide">{right}</span>
+        <span className="figure text-ink3">{right}</span>
+      </div>
+      <div className={`mt-1.5 h-1.5 overflow-hidden rounded-full ${TONE_TRACK[tone]}`}>
+        <div
+          className={`h-full rounded-full ${TONE_FILL[tone]} transition-[width] duration-500 ease-out`}
+          style={{ width: `${width}%` }}
+        />
       </div>
     </div>
   );
 }
 
+/* On a ruled row the severity lived in a rail down the margin. A card
+   has its own edge, so it becomes a dot beside the title instead. */
 export function Rail({ tone }: { tone: "ok" | "late" | "crit" }) {
-  return <div className={`w-[3px] shrink-0 ${TONE_FILL[tone]}`} aria-hidden="true" />;
+  return (
+    <span
+      className={`inline-block h-2 w-2 shrink-0 rounded-full ${TONE_FILL[tone]}`}
+      aria-hidden="true"
+    />
+  );
 }
 
 export function MicIcon({ size = 20 }: { size?: number }) {
@@ -187,6 +195,103 @@ export function MenuIcon({ size = 20 }: { size?: number }) {
   return (
     <Glyph size={size}>
       <path d="M4 7h16M4 12h16M4 17h16" />
+    </Glyph>
+  );
+}
+
+/* One drawn mark per category. A list of nine names is a wall of text
+   in either language; nine pictures is something a person can point at
+   without reading, which is the whole reason they are here. */
+export function IssueIcon({ id, size = 22 }: { id: string; size?: number }) {
+  const art: Record<string, React.ReactNode> = {
+    power: (
+      <>
+        <path d="M13.5 3 5.5 13.5h5.5L10 21l8.5-10.5H13z" />
+      </>
+    ),
+    pipeline: (
+      <>
+        <path d="M7 4v5h6a3 3 0 0 1 3 3v1" />
+        <path d="M4.5 9h5" />
+        <path d="M16 18.5c0 .8-.7 1.5-1.5 1.5S13 19.3 13 18.5c0-1 1.5-2.5 1.5-2.5S16 17.5 16 18.5z" />
+      </>
+    ),
+    bus: (
+      <>
+        <rect x="4" y="4" width="16" height="13" rx="2.5" />
+        <path d="M4 11h16M8 4v7M16 4v7" />
+        <path d="M7.5 17v2M16.5 17v2" />
+      </>
+    ),
+    handpump: (
+      <>
+        <path d="M9 20V8h4l4-3v6" />
+        <path d="M6.5 20h9" />
+        <path d="M13 8h4" />
+      </>
+    ),
+    garbage: (
+      <>
+        <path d="M5 7h14l-1 12.5a1.5 1.5 0 0 1-1.5 1.4h-9A1.5 1.5 0 0 1 6 19.5z" />
+        <path d="M9.5 7V4.5h5V7M10 11v6M14 11v6" />
+      </>
+    ),
+    toilet: (
+      <>
+        <path d="M5.5 4v6.5a6 6 0 0 0 6 6h.5l1.5 4" />
+        <path d="M5.5 10.5h12a6 6 0 0 1-6 6" />
+        <path d="M8.5 20.5h7" />
+      </>
+    ),
+    drain: (
+      <>
+        <rect x="3.5" y="7" width="17" height="10" rx="2" />
+        <path d="M8 7v10M12 7v10M16 7v10" />
+      </>
+    ),
+    streetlight: (
+      <>
+        <path d="M12 21V9" />
+        <path d="M12 9c0-3 2-5 5-5" />
+        <path d="M8.5 21h7" />
+        <path d="M14 9h6l-3 4z" />
+      </>
+    ),
+    road: (
+      <>
+        <path d="M8 3 5 21M16 3l3 18" />
+        <path d="M12 4v3M12 10.5v3M12 17v3" />
+      </>
+    )
+  };
+
+  return <Glyph size={size}>{art[id] ?? art.road}</Glyph>;
+}
+
+export function ReportIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <path d="M6.5 8h2l1.2-2h4.6L15.5 8h2A2.5 2.5 0 0 1 20 10.5v6A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-6A2.5 2.5 0 0 1 6.5 8z" />
+      <circle cx="12" cy="13.2" r="3" />
+    </Glyph>
+  );
+}
+
+export function LedgerIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <rect x="4" y="3.5" width="16" height="17" rx="2.5" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
+    </Glyph>
+  );
+}
+
+export function DeskIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <path d="M9 4.5h6v2H9z" />
+      <path d="M9 5.5H6.5A1.5 1.5 0 0 0 5 7v12a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V7a1.5 1.5 0 0 0-1.5-1.5H15" />
+      <path d="M8.5 12.5l2 2 4.5-4.5" />
     </Glyph>
   );
 }

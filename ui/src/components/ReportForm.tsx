@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { ISSUES, type IssueId } from "../data";
 import { fileReport } from "../api";
 import MapPicker, { type Spot } from "./MapPicker";
-import { MicIcon } from "./Bits";
+import { IssueIcon, MicIcon } from "./Bits";
 import { stepText, useT } from "../i18n";
 
 /* Three screens, not one long page.
@@ -129,31 +129,26 @@ export default function ReportForm({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="bg-surface px-4 pt-4 pb-3">
+      <div className="px-4 pt-4 pb-3">
         <p className="micro text-ink3">{stepText(step, SCREENS, lang)}</p>
-        <h2 className="display mt-0.5 text-[24px] leading-tight font-semibold">
-          {t(TITLES[step - 1])}
-        </h2>
+        <h2 className="display mt-0.5 text-[25px] leading-tight">{t(TITLES[step - 1])}</h2>
         <p className="mt-1 text-[13px] text-ink2">{t(HINTS[step - 1])}</p>
 
         {/* A rail rather than dots: it reads as distance covered, which
             is the only thing a person wants to know here. */}
-        <div className="mt-3 flex gap-1" aria-hidden="true">
+        <div className="mt-3 flex gap-1.5" aria-hidden="true">
           {[1, 2, 3].map((n) => (
             <span
               key={n}
-              className={`h-[3px] flex-1 transition-colors ${
-                n <= step ? "bg-teal" : "bg-sunken"
+              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                n <= step ? "bg-teal" : "bg-rule"
               }`}
             />
           ))}
         </div>
       </div>
 
-      <div
-        key={step}
-        className="rise min-h-[52vh] border-t border-rulesoft bg-surface px-4 py-4"
-      >
+      <div key={step} className="rise card mx-4 min-h-[46vh] p-4">
         {step === 1 && (
           <>
             <input
@@ -170,7 +165,7 @@ export default function ReportForm({
                 <img
                   src={photo.src}
                   alt={t("Photo")}
-                  className="w-full max-w-full border border-rule object-cover"
+                  className="w-full max-w-full rounded-[var(--r-ctl)] object-cover"
                 />
                 <p className="micro figure mt-2 flex items-center justify-between text-ink3">
                   <span>
@@ -183,7 +178,7 @@ export default function ReportForm({
               </div>
             ) : (
               <button
-                className="w-full border border-dashed border-rule bg-sunken py-16 text-[15px] font-medium text-ink2 transition hover:border-teal hover:text-ink"
+                className="w-full rounded-[var(--r-ctl)] border-2 border-dashed border-rule bg-sunken py-16 text-[15px] font-medium text-ink2 transition hover:border-teal hover:text-ink"
                 onClick={() => fileRef.current?.click()}
               >
                 {t("Take a photo, or choose one")}
@@ -194,7 +189,7 @@ export default function ReportForm({
 
         {step === 2 && (
           <>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {ISSUES.map((i) => {
                 const on = issue === i.id;
                 return (
@@ -202,19 +197,27 @@ export default function ReportForm({
                     key={i.id}
                     onClick={() => setIssue(i.id)}
                     aria-pressed={on}
-                    className={`flex min-h-[62px] flex-col justify-center border px-2.5 py-2 text-left transition ${
-                      on
-                        ? "border-teal bg-teal text-tealink"
-                        : "border-rule bg-surface hover:border-teal/50"
+                    title={t(i.why)}
+                    className={`flex flex-col items-center gap-1.5 rounded-[var(--r-ctl)] px-1 py-2.5 transition ${
+                      on ? "bg-tealwash" : "hover:bg-sunken"
                     }`}
                   >
-                    <span className="text-[14px] leading-tight font-semibold">
-                      {lang === "kn" ? i.kannada : i.name}
+                    <span
+                      className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
+                        on ? "bg-teal text-tealink" : "bg-sunken text-ink2"
+                      }`}
+                    >
+                      <IssueIcon id={i.id} size={23} />
                     </span>
                     <span
-                      className={`figure mt-0.5 text-[11px] ${on ? "text-tealink/70" : "text-ink3"}`}
+                      className={`flex min-h-[2.3em] items-center text-center text-[11.5px] leading-tight font-semibold ${
+                        on ? "text-teal" : "text-ink2"
+                      }`}
                     >
-                      {i.sla}h · {t(i.why)}
+                      {lang === "kn" ? i.kannada : i.name}
+                    </span>
+                    <span lang="en" className="figure text-[10px] text-ink3">
+                      {i.sla}h
                     </span>
                   </button>
                 );
@@ -228,11 +231,11 @@ export default function ReportForm({
               value={note}
               onChange={(e) => onNote(e.target.value)}
               placeholder={t("Dark since Deepavali. Children walk here at 6am.")}
-              className="w-full resize-y border border-rule bg-surface px-3 py-2.5 text-[15px] text-ink placeholder:text-ink3"
+              className="w-full resize-y rounded-[var(--r-ctl)] border border-rule bg-sunken px-3.5 py-3 text-[15px] text-ink placeholder:text-ink3 focus:border-teal focus:outline-none"
             />
             <button
               onClick={onSpeak}
-              className="mt-2 flex w-full items-center justify-center gap-2 border border-dashed border-rule bg-sunken py-3 text-[14px] font-semibold text-ink2 transition hover:border-teal hover:text-ink"
+              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[var(--r-ctl)] border border-rule py-3 text-[14px] font-semibold text-ink2 transition hover:border-teal hover:text-teal"
             >
               <MicIcon size={17} />
               {t("Speak instead of typing")}
@@ -256,10 +259,10 @@ export default function ReportForm({
                   key={p}
                   onClick={() => setPlace(p)}
                   aria-pressed={place === p}
-                  className={`min-h-[44px] border px-2 py-2 text-[13px] font-medium transition ${
+                  className={`min-h-[46px] rounded-[var(--r-ctl)] border px-2 py-2 text-[13px] font-semibold transition ${
                     place === p
                       ? "border-teal bg-teal text-tealink"
-                      : "border-rule bg-surface hover:border-teal/50"
+                      : "border-rule text-ink2 hover:border-teal/60"
                   }`}
                 >
                   {t(p)}
@@ -267,7 +270,7 @@ export default function ReportForm({
               ))}
             </div>
             {place !== "Neither" && (
-              <p className="mt-2 text-[12.5px] text-stamp">
+              <p className="mt-2.5 rounded-[10px] bg-stampwash px-3 py-2 text-[12.5px] text-stamp">
                 {t(
                   "A school toilet is not a Panchayat asset. This routes to the Education Department instead."
                 )}
@@ -280,12 +283,12 @@ export default function ReportForm({
       {/* Sits on top of the tab bar rather than at the end of the page,
           so Next is under the thumb on every screen including the tall
           one with the map on it. */}
-      <div className="h-24" />
+      <div className="h-32" />
       <div className="fixed inset-x-0 bottom-[var(--nav-h)] z-20 border-t border-rule bg-surface">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2.5">
+        <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-3">
           {step > 1 && (
             <button
-              className="border border-rule px-5 py-3 text-[15px] font-semibold text-ink2 transition hover:border-teal hover:text-ink"
+              className="rounded-[var(--r-ctl)] border border-rule px-5 py-3.5 text-[15px] font-semibold text-ink2 transition hover:border-teal hover:text-teal"
               onClick={() => setStep((n) => n - 1)}
             >
               {t("Back")}
@@ -294,7 +297,7 @@ export default function ReportForm({
           <button
             disabled={blocked || sending}
             onClick={() => (step < SCREENS ? setStep((n) => n + 1) : send())}
-            className="flex-1 bg-teal py-3 text-[16px] font-semibold text-tealink transition disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink3"
+            className="flex-1 rounded-[var(--r-ctl)] bg-teal py-3.5 text-[16px] font-semibold text-tealink shadow-[var(--shadow-card)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink3 disabled:shadow-none"
           >
             {step < SCREENS
               ? t(step === 1 && !photo ? "Skip the photo" : "Next")

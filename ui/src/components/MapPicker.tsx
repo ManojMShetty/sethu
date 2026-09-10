@@ -196,10 +196,10 @@ export default function MapPicker({
       <button
         onClick={findMe}
         disabled={locating}
-        className={`flex w-full items-center justify-center gap-2 border py-3 text-[15px] font-semibold transition ${
+        className={`flex w-full items-center justify-center gap-2 rounded-[var(--r-ctl)] border py-3.5 text-[15px] font-semibold transition ${
           value
-            ? "border-rule bg-surface text-ink2 hover:border-teal hover:text-ink"
-            : "border-teal bg-teal text-tealink hover:opacity-90"
+            ? "border-rule text-ink2 hover:border-teal hover:text-teal"
+            : "border-teal bg-teal text-tealink shadow-[var(--shadow-card)] hover:opacity-90"
         } disabled:opacity-60`}
       >
         <CrosshairIcon size={18} />
@@ -211,12 +211,12 @@ export default function MapPicker({
       </button>
 
       {denied && (
-        <p className="border border-rule border-t-0 bg-sunken px-3 py-2 text-[12.5px] text-late">
+        <p className="mt-2 rounded-[10px] bg-amberwash px-3 py-2 text-[12.5px] text-late">
           {t("Location is off. Drop the pin by hand.")}
         </p>
       )}
 
-      <div className="flex items-center gap-3 border border-rule border-b-0 border-t-0 bg-sunken px-3 py-2.5">
+      <div className="mt-2.5 flex items-center gap-3 rounded-[var(--r-ctl)] bg-sunken px-3.5 py-2.5">
         <span className="figure min-w-0 flex-1 truncate text-[13.5px] text-ink2">
           {label}
         </span>
@@ -224,7 +224,7 @@ export default function MapPicker({
 
       <div
         ref={host}
-        className="h-[230px] w-full max-w-full border border-rule bg-sunken sm:h-[300px]"
+        className="mt-2.5 h-[240px] w-full max-w-full overflow-hidden rounded-[var(--r-ctl)] bg-sunken sm:h-[320px]"
         style={{ display: ready === "failed" ? "none" : undefined }}
       />
 
@@ -235,13 +235,13 @@ export default function MapPicker({
       {/* No tiles, no map. Put the list back and say why in one line,
           rather than leaving a grey square and an apology. */}
       {ready === "failed" && (
-        <div className="border border-rule border-t-0 bg-surface p-3">
+        <div className="mt-2.5 rounded-[var(--r-ctl)] bg-sunken p-3">
           <p className="text-[13px] text-crit">
             {t("Map could not load. Pick the nearest landmark instead.")}
           </p>
           <select
             id="landmark-select"
-            className="mt-2 w-full border border-rule bg-surface px-3 py-2.5 text-[15px]"
+            className="mt-2 w-full rounded-[10px] border border-rule bg-surface px-3 py-2.5 text-[15px]"
             value={value?.name ?? ""}
             onChange={(e) => {
               const spot = LANDMARKS.find((l) => l.name === e.target.value);

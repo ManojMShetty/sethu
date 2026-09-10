@@ -281,7 +281,12 @@ const TRANSLATORS: Record<Lang, (english: string) => string> = {
 
 /* Kannada is the default, not the alternative. This is a Karnataka
    village; English is the second language here whatever the rest of the
-   software people get handed assumes. */
+   software people get handed assumes.
+
+   The browser's own locale is not the tiebreak it looks like: phones
+   sold here ship set to English whoever buys them, so going by
+   navigator.language means the app opens in English for exactly the
+   people this table exists for. Once someone picks, we remember. */
 export const LANG_KEY = "sethu.lang";
 
 export function firstLanguage(): Lang {
@@ -289,9 +294,9 @@ export function firstLanguage(): Lang {
     const saved = localStorage.getItem(LANG_KEY);
     if (saved === "kn" || saved === "en") return saved;
   } catch {
-    /* storage off; fall through to the browser's own answer. */
+    /* storage off; they pick again each visit. */
   }
-  return navigator.language?.toLowerCase().startsWith("en") ? "en" : "kn";
+  return "kn";
 }
 
 interface Language {

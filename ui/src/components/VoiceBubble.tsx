@@ -257,7 +257,7 @@ export default function VoiceBubble({
           onClick={stop}
         >
           <div
-            className="rise w-full max-w-md border-t-[3px] border-teal bg-surface p-4"
+            className="rise w-full max-w-md rounded-[22px] bg-surface p-5 shadow-[var(--shadow-lift)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -295,10 +295,10 @@ export default function VoiceBubble({
                     key={code}
                     onClick={() => speakIn(code)}
                     aria-pressed={speech === code}
-                    className={`micro border px-2.5 py-1 transition ${
+                    className={`micro rounded-full px-3 py-1.5 transition ${
                       speech === code
-                        ? "border-teal bg-teal text-tealink"
-                        : "border-rule text-ink2 hover:border-teal/60"
+                        ? "bg-teal text-tealink"
+                        : "bg-sunken text-ink2 hover:text-ink"
                     }`}
                   >
                     {code === "kn" ? "ಕನ್ನಡ" : "English"}
@@ -326,7 +326,7 @@ export default function VoiceBubble({
 
             <div className="mt-4 flex gap-2">
               <button
-                className="flex-1 bg-teal py-3 text-[15px] font-semibold text-tealink disabled:bg-sunken disabled:text-ink3"
+                className="flex-1 rounded-[var(--r-ctl)] bg-teal py-3.5 text-[15px] font-semibold text-tealink disabled:bg-sunken disabled:text-ink3"
                 disabled={!heard.trim()}
                 onClick={() => {
                   onText(heard.trim());
@@ -337,7 +337,7 @@ export default function VoiceBubble({
               </button>
               {!live && !problem && (
                 <button
-                  className="border border-rule px-4 text-[15px] font-semibold text-ink2"
+                  className="rounded-[var(--r-ctl)] border border-rule px-4 text-[15px] font-semibold text-ink2"
                   onClick={listen}
                 >
                   {t("Again")}
