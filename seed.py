@@ -12,12 +12,12 @@
 # Run this immediately before you demo. Never demo from whatever state you
 # left the app in last night.
 #
-# >>> THE LOCALITIES AND COORDINATES BELOW ARE PLACEHOLDERS. <<<
-# They are the landmarks every Karnataka hamlet has, so the shape is right,
-# but the names are generic and the coordinates are invented. Replace every
-# one with what you write down on the field visit to Vyasarajapura. A local
-# judge will spot invented geography immediately, and real names are the
-# cheapest credibility on offer.
+# Vyasarajapura, T. Narasipura taluk, Mysuru district, PIN 571120. The
+# coordinates below sit around Somanathapura's recorded position, which
+# shares this PIN, so the district and the roads are right and the points
+# are good to about a kilometre. The place NAMES are the generic ones every
+# hamlet here has. Ask in the village and rename them; that is the cheapest
+# credibility on offer and it is the one thing the internet cannot give you.
 
 import sys
 import time
@@ -27,34 +27,64 @@ HOUR = 3_600_000
 
 #        category  locality                       note
 #                  lat        lng        age_h  status        reopened
+#                  place_kind   reason code the owner has posted, or None
 ROWS = [
-    ("water",  "Overhead tank, main road",   13.0000, 77.5000,  86, "open",     2,
+    ("water", "Overhead tank",                  12.2769, 76.8821,  86, "open",    2,
+     None, "no_funds",
      "Tank is full. Nothing comes out of the tap at our end of the road."),
-    ("power",  "Transformer, east colony",   13.0013, 77.5021,  31, "open",     0,
+    ("power", "Transformer, Somanathapura road", 12.2752, 76.8836,  31, "open",    0,
+     None, None,
      "Transformer went in the rain. Fourth day now. No line man has come."),
-    ("bus",    "Bus stop, main road",        13.0004, 77.5003,  40, "assigned", 0,
+    ("bus",  "Bus stop, Sosale road",          12.2762, 76.8808,  40, "assigned", 0,
+     None, "not_our_asset",
      "The 7:10 has not run all week. Children are missing first period."),
-    ("bore",   "Borewell, north colony",     13.0022, 77.5006,  19, "awaiting", 0,
+    ("bore", "Borewell, north colony",         12.2775, 76.8814,  19, "awaiting", 0,
+     None, None,
      "Hand pump handle broken. Forty houses use this one."),
-    ("drain",  "Ration shop",                13.0002, 77.5011,  54, "open",     0,
+    ("drain", "Ration shop",                    12.2758, 76.8803,  54, "open",    0,
+     None, "awaiting_material",
      "Blocked drain. Standing water outside the shop for a week."),
-    ("waste",  "Government school gate",     13.0015, 77.5001,   9, "open",     0,
+    ("waste", "Government school",              12.2747, 76.8809,   9, "open",    0,
+     "school", None,
      "Not collected since Friday. Dogs at it every night, next to the gate."),
-    ("toilet", "Anganwadi centre",           13.0011, 77.5008,  11, "assigned", 0,
+    # The row that carries the problem statement. A school toilet, well past
+    # its deadline, and nobody has said a word about it.
+    ("toilet", "Government school",              12.2745, 76.8807,  61, "open",    0,
+     "school", None,
+     "Toilet has been locked since the tap stopped. Girls go home at noon."),
+    ("toilet", "Anganwadi centre",               12.2751, 76.8825,  11, "assigned", 0,
+     "anganwadi", None,
      "No water in the toilet for four days."),
-    ("road",   "Temple junction",            13.0018, 77.4993,  26, "open",     0,
+    ("road", "Temple junction",                12.2743, 76.8818,  26, "open",    0,
+     None, "needs_sanction",
      "Hole at the junction. Two-wheelers swerve into oncoming traffic."),
-    ("light",  "Primary Health Centre",      13.0009, 77.5014,   6, "open",     0,
-     "Pole outside the PHC gate is out. Night cases arrive in the dark."),
-    ("water",  "Gram Panchayat office",      13.0007, 77.4996,   3, "open",     0,
+    ("light", "Health sub-centre",              12.2764, 76.8831,   6, "open",    0,
+     None, None,
+     "Pole outside the sub-centre is out. Night cases arrive in the dark."),
+    ("water", "Gram Panchayat office",          12.2755, 76.8813,   3, "open",    0,
+     None, None,
      "Small leak at the valve. Reporting before it becomes a big one."),
-    ("light",  "Bus stop, main road",        13.0005, 77.5004,  70, "resolved", 0,
+    ("light", "Bus stop, Sosale road",          12.2761, 76.8806,  70, "resolved", 0,
+     None, None,
      "Streetlight out at the stop."),
-    ("drain",  "Overhead tank, main road",   13.0001, 77.5002,  96, "resolved", 1,
+    ("drain", "Overhead tank",                  12.2770, 76.8820,  96, "resolved", 1,
+     None, None,
      "Drain overflowing beside the tank."),
 ]
 
-WORKERS = ["Lineman, Ward 4", "Water section, Ward 7", "Sanitary inspector"]
+# Posts that actually exist in a Karnataka Gram Panchayat. There is no
+# lineman post in the standard staffing pattern, which is itself why a dead
+# streetlight sits for a week, so streetlight work is shown as outsourced.
+WORKERS = ["Water operator", "Sanitation worker", "Contract electrician"]
+
+# What each department says when it has not fixed something. Seeded so the
+# ledger on the projector shows a real spread: some explained, some not.
+REASON_DETAIL = {
+    "no_funds": "Tabled for the October Gram Sabha",
+    "not_our_asset": "Route and timings are the depot's, not ours",
+    "awaiting_material": "Desilting rods ordered from the taluk store",
+    "needs_sanction": "Estimate above our limit, sent to the PRED",
+}
 
 
 def seed():
@@ -62,8 +92,8 @@ def seed():
     conn = server.get_db()
     real_now = int(time.time() * 1000)
 
-    for i, (cat, place, lat, lng, age_h, status, reopened, note) in \
-            enumerate(ROWS, start=1):
+    for i, (cat, place, lat, lng, age_h, status, reopened, place_kind,
+            reason, note) in enumerate(ROWS, start=1):
         rid = "VYS-" + str(i).zfill(4)
         created = real_now - age_h * HOUR
         token = "seed-resident-" + str(i)
@@ -72,14 +102,28 @@ def seed():
         # A reopened report keeps its ORIGINAL date and restarts only the
         # deadline. That is the pair of numbers the whole pitch rests on.
         deadline_from = created + 24 * HOUR if reopened else created
+        owner = server.owner_for(cat, place_kind)
 
         conn.execute("""
             INSERT INTO reports
               (id, category, note, lat, lng, place, status,
-               created_at, deadline_from, reporter_hash, worker, reopened)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               created_at, deadline_from, reporter_hash, worker, reopened,
+               owner_body, place_kind)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (rid, cat, note, lat, lng, place, status, created, deadline_from,
-              who, WORKERS[i % 3] if status != "open" else None, reopened))
+              who, WORKERS[i % 3] if status != "open" else None, reopened,
+              owner, place_kind))
+
+        if reason:
+            conn.execute(
+                "INSERT INTO reasons (report_id, code, detail, body, cycle, at)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (rid, reason, REASON_DETAIL.get(reason, ""), owner, reopened,
+                 created + 4 * HOUR))
+            server.add_history(
+                conn, rid,
+                server.BODIES[owner]["name"] + " gave a reason: " +
+                server.REASONS[reason], created + 4 * HOUR)
 
         conn.execute("INSERT INTO voices (report_id, voter_hash, at) "
                      "VALUES (?, ?, ?)", (rid, who, created))
@@ -120,7 +164,8 @@ def seed():
     server.record_escalations(conn, server.now(conn))
     conn.close()
     print("Seeded " + str(len(ROWS)) + " reports.")
-    print("REPLACE the localities with real ones from the field visit.")
+    print("Confirm the place names in the village. Coordinates are\n"
+      "the Somanathapura cluster, good to about a kilometre.")
 
 
 if __name__ == "__main__":

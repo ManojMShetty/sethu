@@ -156,5 +156,113 @@ check("reporter closes it for good", status == 200)
 
 call("POST", "/api/clock", {"reset": True})
 
+# ---- the explanation the Panchayat owes the resident ---------------------
+# The same contract test_local.js runs against store-local.js. If a rule
+# changes on one side only, one of these two files goes red.
+
+
+def find(report_id):
+    _, payload = call("GET", "/api/reports")
+    return [r for r in payload["reports"] if r["id"] == report_id][0]
+
+
+status, body = call("POST", "/api/report", {
+    "category": "toilet", "lat": 12.4000, "lng": 76.8000,
+    "token": RESIDENT, "place_kind": "school"})
+school_toilet = body["id"]
+
+status, body = call("POST", "/api/report", {
+    "category": "toilet", "lat": 12.5000, "lng": 76.9000, "token": RESIDENT})
+village_toilet = body["id"]
+
+status, body = call("POST", "/api/report", {
+    "category": "power", "lat": 12.6000, "lng": 77.0000, "token": RESIDENT})
+power_line = body["id"]
+
+check("school toilet routes to the education dept",
+      find(school_toilet)["owner_body"] == "edu")
+check("village toilet stays with the Panchayat",
+      find(village_toilet)["owner_body"] == "gp")
+check("a power line starts with the ESCOM",
+      find(power_line)["owner_body"] == "escom")
+
+status, _ = call("POST", "/api/reason", {"id": village_toilet,
+                                         "code": "because"})
+check("reason must come from the list     (400)", status == 400)
+
+status, _ = call("POST", "/api/reason", {"id": "VYS-9999",
+                                         "code": "no_funds"})
+check("reason on an unknown report        (404)", status == 404)
+
+before = find(village_toilet)
+status, _ = call("POST", "/api/reason", {
+    "id": village_toilet, "code": "no_funds",
+    "detail": "Gram Sabha meets in October"})
+check("official gives a reason", status == 200)
+
+after = find(village_toilet)
+check("the reason is on the public record", len(after["reasons"]) == 1)
+check("the reason carries who said it",
+      after["reasons"][0]["body"] == "gp" and after["reasons"][0]["detail"])
+check("a reason does NOT move the deadline",
+      after["deadline_from"] == before["deadline_from"])
+check("a reason does NOT rewrite the report date",
+      after["created_at"] == before["created_at"])
+
+status, _ = call("POST", "/api/reason", {"id": school_toilet,
+                                         "code": "not_our_asset"})
+check("rerouting needs a destination      (400)", status == 400)
+
+status, _ = call("POST", "/api/reason", {"id": school_toilet,
+                                         "code": "not_our_asset",
+                                         "to": "edu"})
+check("cannot reroute to its current owner (400)", status == 400)
+
+before = find(school_toilet)
+status, _ = call("POST", "/api/reason", {
+    "id": school_toilet, "code": "not_our_asset",
+    "detail": "Tap is outside the compound wall", "to": "gp"})
+check("handed to the Panchayat", status == 200)
+
+after = find(school_toilet)
+check("the owner changed", after["owner_body"] == "gp")
+check("but handing it over did NOT restart the clock",
+      after["deadline_from"] == before["deadline_from"] and
+      after["created_at"] == before["created_at"])
+
+call("POST", "/api/assign", {"id": power_line, "worker": "Section officer"})
+call("POST", "/api/clock", {"hours": 20})       # a power line gets 12 hours
+
+late = find(power_line)
+check("overdue and unexplained reads as silent", late["silent"] is True)
+check("escalated even though nobody explained", late["level"] == 1)
+
+status, _ = call("POST", "/api/repaired", {"id": power_line,
+                                           "photo": "data:image/jpeg,x"})
+check("no repair claim while the delay is unexplained (409)", status == 409)
+
+status, _ = call("POST", "/api/reason", {
+    "id": power_line, "code": "no_staff",
+    "detail": "No lineman posted to this Panchayat"})
+check("so the official explains it", status == 200)
+
+late = find(power_line)
+check("silence is cleared", late["silent"] is False)
+check("but it is STILL escalated and still late", late["level"] == 1)
+
+status, _ = call("POST", "/api/repaired", {"id": power_line,
+                                           "photo": "data:image/jpeg,x"})
+check("and now the repair claim is allowed", status == 200)
+
+status, _ = call("POST", "/api/confirm", {"id": power_line, "works": False,
+                                          "token": RESIDENT})
+check("resident says it is still broken", status == 200)
+
+call("POST", "/api/clock", {"hours": 20})
+check("last month's excuse does not cover this month",
+      find(power_line)["silent"] is True)
+
+call("POST", "/api/clock", {"reset": True})
+
 print("")
 print(str(passed) + " passed")

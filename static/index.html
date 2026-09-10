@@ -27,6 +27,7 @@
     <div><b id="countLate">0</b><small>past deadline</small></div>
     <div><b id="countDone">0</b><small>fixed and verified</small></div>
     <div><b id="countFalse">0</b><small>repairs rejected</small></div>
+    <div><b id="countSilent">0</b><small>late, no reason given</small></div>
   </div>
 </div>
 
@@ -66,6 +67,11 @@
     <select id="placeSelect">
       <option value="">Or pick the nearest landmark</option>
     </select>
+
+    <!-- A school toilet is not a Panchayat asset. Asking this one question
+         is what lets us route it to the education department instead. -->
+    <label>Is it inside a school or anganwadi?</label>
+    <div class="places" id="placeKinds"></div>
 
     <label>Anything to add?</label>
     <textarea id="noteInput" rows="3"

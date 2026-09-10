@@ -42,6 +42,10 @@ var ServerApi = {
                                                  { id: id, token: token }); },
   assign(id, worker)          { return this.post("/api/assign",
                                                  { id: id, worker: worker }); },
+  giveReason(id, code, detail, to) {
+                                return this.post("/api/reason",
+                                    { id: id, code: code, detail: detail,
+                                      to: to }); },
   markRepaired(id, photo)     { return this.post("/api/repaired",
                                                  { id: id, photo: photo }); },
   confirmFix(id, works, tok)  { return this.post("/api/confirm",

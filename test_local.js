@@ -111,5 +111,92 @@ function check(name, condition) {
   check("reporter closes it for good",
         (await api.confirmFix(first, true, RESIDENT)).ok === true);
 
+  // ---- the explanation the Panchayat owes the resident ---------------
+  // Everything below is about one rule: an official may not leave a
+  // resident guessing, and may not buy time by explaining.
+
+  await api.shiftClock({ reset: true });
+
+  r = await api.addReport({ category: "toilet", lat: 12.4000, lng: 76.8000,
+                            token: RESIDENT, place_kind: "school" });
+  const schoolToilet = r.id;
+  r = await api.addReport({ category: "toilet", lat: 12.5000, lng: 76.9000,
+                            token: RESIDENT });
+  const villageToilet = r.id;
+  r = await api.addReport({ category: "power", lat: 12.6000, lng: 77.0000,
+                            token: RESIDENT });
+  const powerLine = r.id;
+
+  list = await api.listReports();
+  const ownerOf = (id) => list.reports.find((x) => x.id === id).owner_body;
+  check("school toilet routes to the education dept",
+        ownerOf(schoolToilet) === "edu");
+  check("village toilet stays with the Panchayat",
+        ownerOf(villageToilet) === "gp");
+  check("a power line starts with the ESCOM",
+        ownerOf(powerLine) === "escom");
+
+  check("reason must come from the list     (400)",
+        (await api.giveReason(villageToilet, "because", "", null)).status === 400);
+  check("reason on an unknown report        (404)",
+        (await api.giveReason("VYS-9999", "no_funds", "", null)).status === 404);
+
+  let before = list.reports.find((x) => x.id === villageToilet);
+  check("official gives a reason",
+        (await api.giveReason(villageToilet, "no_funds",
+                              "Gram Sabha meets in October")).ok === true);
+  list = await api.listReports();
+  let after = list.reports.find((x) => x.id === villageToilet);
+  check("the reason is on the public record", after.reasons.length === 1);
+  check("the reason carries who said it",
+        after.reasons[0].body === "gp" && after.reasons[0].detail.length > 0);
+  check("a reason does NOT move the deadline",
+        after.deadline_from === before.deadline_from);
+  check("a reason does NOT rewrite the report date",
+        after.created_at === before.created_at);
+
+  check("rerouting needs a destination      (400)",
+        (await api.giveReason(schoolToilet, "not_our_asset", "", null)).status === 400);
+  check("cannot reroute to its current owner (400)",
+        (await api.giveReason(schoolToilet, "not_our_asset", "", "edu")).status === 400);
+
+  before = list.reports.find((x) => x.id === schoolToilet);
+  check("handed to the Panchayat",
+        (await api.giveReason(schoolToilet, "not_our_asset",
+                              "Tap is outside the compound wall", "gp")).ok === true);
+  list = await api.listReports();
+  after = list.reports.find((x) => x.id === schoolToilet);
+  check("the owner changed", after.owner_body === "gp");
+  check("but handing it over did NOT restart the clock",
+        after.deadline_from === before.deadline_from &&
+        after.created_at === before.created_at);
+
+  await api.assign(powerLine, "Section officer");
+  await api.shiftClock({ hours: 20 });          // a power line gets 12 hours
+
+  list = await api.listReports();
+  let late = list.reports.find((x) => x.id === powerLine);
+  check("overdue and unexplained reads as silent", late.silent === true);
+  check("escalated even though nobody explained", late.level === 1);
+  check("no repair claim while the delay is unexplained (409)",
+        (await api.markRepaired(powerLine, "data:image/jpeg,x")).status === 409);
+
+  check("so the official explains it",
+        (await api.giveReason(powerLine, "no_staff",
+                              "No lineman posted to this Panchayat")).ok === true);
+  list = await api.listReports();
+  late = list.reports.find((x) => x.id === powerLine);
+  check("silence is cleared", late.silent === false);
+  check("but it is STILL escalated and still late", late.level === 1);
+  check("and now the repair claim is allowed",
+        (await api.markRepaired(powerLine, "data:image/jpeg,x")).ok === true);
+
+  check("resident says it is still broken",
+        (await api.confirmFix(powerLine, false, RESIDENT)).ok === true);
+  await api.shiftClock({ hours: 20 });
+  list = await api.listReports();
+  late = list.reports.find((x) => x.id === powerLine);
+  check("last month's excuse does not cover this month", late.silent === true);
+
   console.log("\n" + passed + " passed");
 })();

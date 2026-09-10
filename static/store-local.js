@@ -16,8 +16,44 @@ var RULES = {
   deadlines: { power: 12, water: 24, bus: 24, bore: 24, waste: 24,
                toilet: 48, drain: 48, light: 72, road: 168 },
   radius:    { power: 25, water: 25, bore: 25, toilet: 25, light: 25,
-               bus: 40, waste: 60, drain: 60, road: 60 }
+               bus: 40, waste: 60, drain: 60, road: 60 },
+  owners:    { power: "escom", light: "gp", water: "gp", bore: "gp",
+               waste: "gp", toilet: "gp", drain: "gp", road: "gp",
+               bus: "ksrtc" },
+  bodies: {
+    gp:    { name: "Gram Panchayat",
+             officer: "Panchayat Development Officer",
+             reach: "Panchayat office" },
+    escom: { name: "CESC Mysuru", officer: "Section Officer",
+             reach: "1912" },
+    rdwsd: { name: "Rural Drinking Water & Sanitation Dept",
+             officer: "Assistant Executive Engineer",
+             reach: "Taluk office" },
+    pred:  { name: "Panchayat Raj Engineering Division",
+             officer: "Assistant Executive Engineer",
+             reach: "Zilla Panchayat" },
+    pwd:   { name: "Public Works Department",
+             officer: "Assistant Engineer", reach: "Taluk office" },
+    edu:   { name: "Education Department",
+             officer: "Block Education Officer", reach: "BEO office" },
+    ksrtc: { name: "KSRTC", officer: "Depot Manager", reach: "Depot" }
+  },
+  reasons: {
+    no_funds:          "No funds until the Gram Sabha approves this work",
+    not_our_asset:     "This asset belongs to another department",
+    awaiting_material: "Waiting for material or a spare part",
+    work_ordered:      "Work order issued, contractor scheduled",
+    no_staff:          "No staff available for this trade",
+    needs_sanction:    "Needs technical sanction above the Panchayat's limit"
+  },
+  places:   { school: "Government school", anganwadi: "Anganwadi centre" },
+  officers: ["Panchayat Development Officer",
+             "Taluk Panchayat Executive Officer",
+             "Zilla Panchayat Chief Executive Officer"]
 };
+
+// Mirrors SCHOOL_OWNER in server.py.
+var SCHOOL_OWNER = { toilet: "edu", water: "edu", bore: "edu" };
 
 var LEVELS = ["Gram Panchayat", "Taluk Panchayat", "Zilla Panchayat"];
 
@@ -30,9 +66,15 @@ var LocalApi = {
   read: function () {
     try {
       var raw = localStorage.getItem("sethu.db");
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        var db = JSON.parse(raw);
+        // A ledger written by an older build has no reasons array. Fill it
+        // in rather than throwing on every read afterwards.
+        if (!db.reasons) db.reasons = [];
+        return db;
+      }
     } catch (e) { /* corrupt or blocked - start clean */ }
-    return { reports: [], history: [], voices: [], offset: 0 };
+    return { reports: [], history: [], voices: [], reasons: [], offset: 0 };
   },
 
   write: function (db) {
@@ -91,6 +133,33 @@ var LocalApi = {
     return 0;
   },
 
+  ownerFor: function (category, placeKind) {
+    if (RULES.places[placeKind] && SCHOOL_OWNER[category]) {
+      return SCHOOL_OWNER[category];
+    }
+    return RULES.owners[category] || "gp";
+  },
+
+  reasonsFor: function (db, id) {
+    return db.reasons.filter(function (r) {
+      return r.report_id === id;
+    }).sort(function (a, b) { return a.at - b.at; }).map(function (r) {
+      return { code: r.code, detail: r.detail, body: r.body,
+               cycle: r.cycle, at: r.at,
+               label: RULES.reasons[r.code] || r.code };
+    });
+  },
+
+  // Mirrors is_silent in server.py. Past the deadline and nobody has
+  // explained why in this round, where a round is the reopened count.
+  isSilent: function (report, reasons, at) {
+    if (report.status === "resolved") return false;
+    if (this.levelFor(report, at) === 0) return false;
+    return !reasons.some(function (r) {
+      return r.cycle === (report.reopened || 0);
+    });
+  },
+
   // ------------------------------------------------------------ reading
 
   async listReports() {
@@ -126,6 +195,9 @@ var LocalApi = {
       copy.history = db.history.filter(function (h) {
         return h.report_id === report.id;
       }).sort(function (a, b) { return a.at - b.at; });
+      copy.reasons = self.reasonsFor(db, report.id);
+      copy.silent = self.isSilent(report, copy.reasons, at);
+      copy.owner = (RULES.bodies[report.owner_body] || RULES.bodies.gp).name;
       return copy;
     }).sort(function (a, b) { return b.created_at - a.created_at; });
 
@@ -162,12 +234,16 @@ var LocalApi = {
     var seq = db.reports.length + 1;
     var id = "VYS-" + String(seq).padStart(4, "0");
 
+    var placeKind = RULES.places[data.place_kind] ? data.place_kind : null;
+
     db.reports.push({
       seq: seq, id: id, category: data.category, note: data.note || "",
       photo: data.photo || null, fix_photo: null,
       lat: data.lat, lng: data.lng, place: data.place || null,
       status: "open", created_at: at, deadline_from: at,
-      reporter_hash: data.token, worker: null, reopened: 0, escalated: 0
+      reporter_hash: data.token, worker: null, reopened: 0, escalated: 0,
+      owner_body: this.ownerFor(data.category, placeKind),
+      place_kind: placeKind
     });
     db.voices.push({ report_id: id, voter_hash: data.token, at: at });
     this.log(db, id, "Reported by a resident", at);
@@ -207,6 +283,45 @@ var LocalApi = {
     return { ok: true, status: 200 };
   },
 
+  async giveReason(id, code, detail, handedTo) {
+    // Read what this never writes: deadline_from, created_at, escalated.
+    // A reason is a thing the Panchayat says, never a thing that buys it
+    // time. Same rule as give_reason in server.py.
+    if (!RULES.reasons[code]) {
+      return this.fail(400, "pick a reason from the list");
+    }
+    var db = this.read();
+    var report = this.find(db, id);
+    if (!report) return this.fail(404, "no such report");
+    if (report.status === "resolved") {
+      return this.fail(409, "that report is already closed");
+    }
+
+    var at = this.now(db);
+    var speaking = report.owner_body || "gp";
+
+    if (code === "not_our_asset") {
+      if (!RULES.bodies[handedTo]) {
+        return this.fail(400, "say which department it belongs to");
+      }
+      if (handedTo === speaking) {
+        return this.fail(400, "that is the department it is already with");
+      }
+      report.owner_body = handedTo;
+      this.log(db, id, "Handed from " + RULES.bodies[speaking].name +
+               " to " + RULES.bodies[handedTo].name +
+               ". The deadline did not restart.", at);
+    }
+
+    db.reasons.push({ report_id: id, code: code,
+                      detail: (detail || "").trim(), body: speaking,
+                      cycle: report.reopened || 0, at: at });
+    this.log(db, id, RULES.bodies[speaking].name + " gave a reason: " +
+             RULES.reasons[code], at);
+    this.write(db);
+    return { ok: true, status: 200 };
+  },
+
   async markRepaired(id, photo) {
     // Staff can only CLAIM a repair. There is no branch in this function
     // that writes 'resolved', exactly as in server.py.
@@ -214,6 +329,12 @@ var LocalApi = {
     var db = this.read();
     var report = this.find(db, id);
     if (!report) return this.fail(404, "no such report");
+
+    // No credit for a late repair you never explained.
+    if (this.isSilent(report, this.reasonsFor(db, id), this.now(db))) {
+      return this.fail(409, "this one went past its deadline. Give the " +
+                            "resident a reason first.");
+    }
     if (report.status !== "assigned") {
       return this.fail(409, "that job is not assigned to anyone");
     }

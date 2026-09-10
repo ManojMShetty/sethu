@@ -52,7 +52,7 @@ body {
 }
 
 .tally {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   max-width: 900px; margin: 0 auto; padding: 0 16px 14px; gap: 8px;
 }
 .tally b { display: block; font-size: 26px; line-height: 1.1; }
@@ -155,6 +155,37 @@ textarea, select {
   margin-left: 4px;
 }
 .chip.bad { background: #F6E2DF; color: var(--zilla); }
+.chip.who { background: #E3ECF1; color: var(--staff); }
+
+/* The three-button row for school / anganwadi / neither. Same shape as
+   .categories so the form reads as one thing. */
+.places { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.places button {
+  padding: 11px 8px; font-size: 14px; cursor: pointer; min-height: 44px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 3px;
+}
+.places button.chosen {
+  background: var(--ink); color: var(--paper); border-color: var(--ink);
+}
+
+/* An unexplained overdue report. This is meant to be the ugliest thing on
+   the ledger - silence should cost more than an inconvenient answer. */
+.saidNothing {
+  border-top: 1px dashed var(--zilla); background: #FCF3F1;
+  padding: 8px 13px; font-size: 13px; color: var(--zilla); font-weight: 600;
+}
+.saidSomething {
+  border-top: 1px solid var(--line); background: var(--wash);
+  padding: 8px 13px; font-size: 13px; color: var(--ink-2);
+}
+.saidSomething b, .saidNothing b { font-weight: 600; }
+
+.reasonBox {
+  background: var(--card); border: 1px solid var(--line); border-radius: 3px;
+  padding: 12px; margin-top: 14px;
+}
+.reasonBox select { margin-bottom: 8px; }
 
 /* the deadline bar is the loudest object on the card, because it is
    the idea the whole product rests on */

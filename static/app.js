@@ -20,26 +20,32 @@ var CATEGORIES = [
   { id: "road",   name: "Road hole",   why: "slower to fix" }
 ];
 
-// >>> PLACEHOLDERS. REPLACE ALL TEN ON THE FIELD VISIT. <<<
-// These are the landmarks every Karnataka hamlet actually has, so the list
-// is the right SHAPE - but the names and the coordinates are invented and
-// a local judge will know it in one second. Walk Vyasarajapura, write down
-// what people actually call these places, and stand at each one to read the
-// real GPS off your phone.
+// Vyasarajapura, T. Narasipura taluk, Mysuru district, PIN 571120. It is a
+// postal branch office under Nanjangud division and shares its PIN with
+// Sosale, Somanathapura, Kolathur, Ukkalagere and Horalahalli, which is how
+// we placed it: the cluster centre below is Somanathapura's own recorded
+// position, 12.2757944 N 76.8816056 E, about 38 km east of Mysuru.
 //
-// This list is also the fallback when the page is on a plain http origin,
+// So the DISTRICT and the roads are real. The individual points are spread
+// around that centre and are good to roughly a kilometre, not to a doorway.
+// Stand at each one and read the GPS off a phone before you rely on them.
+// The names are the ones every hamlet here has rather than the ones the
+// village uses; ask, and rename.
+//
+// None of this is load-bearing for a real report. The app reads GPS off the
+// phone. This list only exists as the fallback for a plain http origin,
 // where the browser blocks geolocation without telling anyone.
 var LANDMARKS = [
-  { name: "Overhead tank, main road", lat: 13.0000, lng: 77.5000 },
-  { name: "Bus stop, main road",      lat: 13.0004, lng: 77.5003 },
-  { name: "Gram Panchayat office",    lat: 13.0007, lng: 77.4996 },
-  { name: "Anganwadi centre",         lat: 13.0011, lng: 77.5008 },
-  { name: "Government school gate",   lat: 13.0015, lng: 77.5001 },
-  { name: "Primary Health Centre",    lat: 13.0009, lng: 77.5014 },
-  { name: "Ration shop",              lat: 13.0002, lng: 77.5011 },
-  { name: "Temple junction",          lat: 13.0018, lng: 77.4993 },
-  { name: "Borewell, north colony",   lat: 13.0022, lng: 77.5006 },
-  { name: "Transformer, east colony", lat: 13.0013, lng: 77.5021 }
+  { name: "Overhead tank",              lat: 12.2769, lng: 76.8821 },
+  { name: "Bus stop, Sosale road",      lat: 12.2762, lng: 76.8808 },
+  { name: "Gram Panchayat office",      lat: 12.2755, lng: 76.8813 },
+  { name: "Anganwadi centre",           lat: 12.2751, lng: 76.8825 },
+  { name: "Government school",          lat: 12.2747, lng: 76.8809 },
+  { name: "Health sub-centre",          lat: 12.2764, lng: 76.8831 },
+  { name: "Ration shop",                lat: 12.2758, lng: 76.8803 },
+  { name: "Temple junction",            lat: 12.2743, lng: 76.8818 },
+  { name: "Borewell, north colony",     lat: 12.2775, lng: 76.8814 },
+  { name: "Transformer, Somanathapura road", lat: 12.2752, lng: 76.8836 }
 ];
 
 var allReports = [];        // everything Store has told us
@@ -49,6 +55,7 @@ var isStaff = false;
 
 var chosenCategory = null;
 var chosenPhoto = null;
+var chosenPlaceKind = "";   // "", "school" or "anganwadi"
 var myLatitude = null;
 var myLongitude = null;
 var myPlace = null;
@@ -146,7 +153,10 @@ function describeAge(milliseconds) {
 function urgency(report) {
   if (report.status === "resolved") return -1;
   var used = hoursSince(report.deadline_from) / report.deadline;
-  return used + Math.min(report.voices, 20) * 0.05 + report.reopened * 0.5;
+  // Silence pushes a job up the desk. A report nobody will explain is the
+  // one most likely to have been quietly abandoned.
+  return used + Math.min(report.voices, 20) * 0.05 + report.reopened * 0.5 +
+         (report.silent ? 1 : 0);
 }
 
 function barWidth(report) {
@@ -179,6 +189,36 @@ function describeDeadline(report) {
 }
 
 // ---------- section 3: drawing the screen ----------
+
+function latestReason(report) {
+  var list = report.reasons || [];
+  return list.length ? list[list.length - 1] : null;
+}
+
+function ownerName(report) {
+  if (report.owner) return report.owner;
+  var body = rules.bodies && rules.bodies[report.owner_body];
+  return body ? body.name : "Gram Panchayat";
+}
+
+function drawPlaceKinds() {
+  var box = document.getElementById("placeKinds");
+  var options = [{ id: "", name: "Neither" }];
+  var places = rules.places || {};
+  for (var key in places) options.push({ id: key, name: places[key] });
+
+  box.innerHTML = "";
+  options.forEach(function (option) {
+    var button = document.createElement("button");
+    button.textContent = option.name;
+    if (chosenPlaceKind === option.id) button.className = "chosen";
+    button.onclick = function () {
+      chosenPlaceKind = option.id;
+      drawPlaceKinds();
+    };
+    box.appendChild(button);
+  });
+}
 
 function drawCategories() {
   var box = document.getElementById("categories");
@@ -225,13 +265,29 @@ function buildReportCard(report) {
     html += '<span class="chip bad">reopened ' +
             plural(report.reopened, "time") + "</span>";
   }
+  if (report.owner_body && report.owner_body !== "gp") {
+    html += '<span class="chip who">' + esc(ownerName(report)) + "</span>";
+  }
   html += "</div></div>";
 
   html += '<div class="' + barClass + '">';
   html += '<div class="deadlineFill" style="width:' + width + '%"></div>';
   html += '<div class="deadlineText"><span>' + esc(describeDeadline(report)) + "</span>";
   html += "<span>" + esc(escalationName(report)) + "</span></div>";
-  html += "</div></div>";
+  html += "</div>";
+
+  // The strip under the bar answers the only question a resident actually
+  // has once a deadline has gone: so what does the Panchayat say about it?
+  var said = latestReason(report);
+  if (report.silent) {
+    html += '<div class="saidNothing">No reason given by the ' +
+            esc(ownerName(report)) + "</div>";
+  } else if (said && report.status !== "resolved") {
+    html += '<div class="saidSomething"><b>' + esc(said.label) + "</b>" +
+            (said.detail ? " &middot; " + esc(said.detail) : "") + "</div>";
+  }
+
+  html += "</div>";
   return html;
 }
 
@@ -253,7 +309,7 @@ function drawList(elementId, reports, emptyText) {
 }
 
 function drawEverything() {
-  var open = 0, late = 0, done = 0, rejected = 0;
+  var open = 0, late = 0, done = 0, rejected = 0, silent = 0;
   var queue = [];
 
   allReports.forEach(function (report) {
@@ -264,6 +320,7 @@ function drawEverything() {
       open++;
       queue.push(report);
       if (report.level > 0) late++;
+      if (report.silent) silent++;
     }
   });
 
@@ -271,6 +328,7 @@ function drawEverything() {
   document.getElementById("countLate").textContent = late;
   document.getElementById("countDone").textContent = done;
   document.getElementById("countFalse").textContent = rejected;
+  document.getElementById("countSilent").textContent = silent;
 
   drawList("ledgerList", allReports,
            "No reports yet. The first one starts the ledger.");
@@ -362,6 +420,7 @@ async function sendReport(force) {
     lat: myLatitude,
     lng: myLongitude,
     place: myPlace,
+    place_kind: chosenPlaceKind,
     token: myToken,
     force: force === true
   }));
@@ -391,11 +450,13 @@ async function sendReport(force) {
 function clearForm() {
   chosenCategory = null;
   chosenPhoto = null;
+  chosenPlaceKind = "";
   document.getElementById("noteInput").value = "";
   document.getElementById("photoArea").innerHTML =
     '<button class="photoButton" id="photoButton">Take a photo</button>';
   document.getElementById("photoButton").onclick = openCamera;
   drawCategories();
+  drawPlaceKinds();
 }
 
 function openCamera() { document.getElementById("photoInput").click(); }
@@ -428,6 +489,27 @@ async function openPopup(reportId) {
             "The original date never changes. Only the current deadline " +
             "restarts.</div>";
   }
+  if (report.silent) {
+    html += '<div class="notice bad"><b>Nobody has said why</b>' +
+            "This is past its deadline and the " + esc(ownerName(report)) +
+            " has not given a reason. Silence is not a status a resident " +
+            "should have to accept.</div>";
+  }
+
+  if ((report.reasons || []).length > 0) {
+    html += "<label>What the " + esc(ownerName(report)) + " has said</label>";
+    html += "<ul class='history'>";
+    report.reasons.forEach(function (said) {
+      html += "<li><b>" + esc(said.label) + "</b>";
+      if (said.detail) html += esc(said.detail) + "<br>";
+      html += "<small>" +
+              esc((rules.bodies[said.body] || {}).name || said.body) +
+              " &middot; " + esc(new Date(said.at).toLocaleString()) +
+              "</small></li>";
+    });
+    html += "</ul>";
+  }
+
   if (report.has_fix_photo) {
     html += "<label>Repair photo submitted by staff</label>";
     html += '<img class="photoPreview" id="photoFix" alt="">';
@@ -441,6 +523,29 @@ async function openPopup(reportId) {
   html += "</ul>";
 
   // Which buttons you get depends on who you are.
+  if (isStaff && report.status !== "resolved") {
+    html += '<div class="reasonBox">';
+    html += "<label>Tell the resident why it is not fixed</label>";
+    html += '<select id="reasonCode"><option value="">Pick a reason</option>';
+    for (var code in rules.reasons) {
+      html += '<option value="' + esc(code) + '">' +
+              esc(rules.reasons[code]) + "</option>";
+    }
+    html += "</select>";
+    html += '<select id="reasonBody" class="hidden">' +
+            '<option value="">Hand it to which department?</option>';
+    for (var key in rules.bodies) {
+      if (key === report.owner_body) continue;
+      html += '<option value="' + esc(key) + '">' +
+              esc(rules.bodies[key].name) + "</option>";
+    }
+    html += "</select>";
+    html += '<textarea id="reasonDetail" rows="2" ' +
+            'placeholder="Anything to add? The resident sees this."></textarea>';
+    html += '<button class="mainButton" id="actionReason">Post this reason</button>';
+    html += "</div>";
+  }
+
   if (isStaff) {
     if (report.status === "open") {
       html += '<button class="mainButton blue" id="actionAssign">Take this job</button>';
@@ -483,6 +588,25 @@ async function openPopup(reportId) {
 }
 
 function attachPopupButtons(reportId) {
+  var reasonCode = document.getElementById("reasonCode");
+  if (reasonCode) {
+    // Only "not our asset" needs a destination, so only then do we ask.
+    reasonCode.onchange = function () {
+      var toWhom = document.getElementById("reasonBody");
+      toWhom.className = this.value === "not_our_asset" ? "" : "hidden";
+    };
+  }
+
+  var reason = document.getElementById("actionReason");
+  if (reason) reason.onclick = async function () {
+    var code = document.getElementById("reasonCode").value;
+    if (!code) { showMessage("Pick a reason first"); return; }
+    var handedTo = document.getElementById("reasonBody").value;
+    var detail = document.getElementById("reasonDetail").value;
+    if (await act(Store.giveReason(reportId, code, detail, handedTo),
+                  "Posted. The resident can see it.")) closePopup();
+  };
+
   var assign = document.getElementById("actionAssign");
   if (assign) assign.onclick = async function () {
     var worker = prompt("Who is taking this job?", "Lineman, Ward 4");
@@ -590,6 +714,7 @@ if (location.search.indexOf("demo=1") > -1) {
   var mode = await Store.start();
   document.getElementById("modeBadge").textContent = mode;
   drawCategories();
+  drawPlaceKinds();
   drawLandmarks();
   findLocation();
   await loadReports();

@@ -34,6 +34,7 @@ var Store = {
   addReport(data)             { return this.api.addReport(data); },
   addVoice(id, token)         { return this.api.addVoice(id, token); },
   assign(id, worker)          { return this.api.assign(id, worker); },
+  giveReason(id, code, det, to) { return this.api.giveReason(id, code, det, to); },
   markRepaired(id, photo)     { return this.api.markRepaired(id, photo); },
   confirmFix(id, works, tok)  { return this.api.confirmFix(id, works, tok); },
   shiftClock(body)            { return this.api.shiftClock(body); },

@@ -21,6 +21,15 @@ DB_FILE = "sethu.db"
 
 # Hours the Panchayat gets before a report escalates itself.
 # A live wire is not a pothole. Be ready to defend every number.
+#
+# These are not numbers we invented. The Model Panchayat Citizens Charter
+# (Ministry of Panchayati Raj + NIRDPR, June 2021) sets service norms for
+# exactly these repairs, and Karnataka adopted a charter in 5,820 of its
+# 5,953 Gram Panchayats. Its illustrative standard for a street light
+# complaint is two working days. The charter is advisory and invisible;
+# all this app does is make the promise the Panchayat already signed up to
+# visible, and count it. If a GP publishes different numbers, edit this
+# dict and the whole app follows.
 DEADLINES = {
     "power": 12, "water": 24, "bus": 24, "bore": 24, "waste": 24,
     "toilet": 48, "drain": 48, "light": 72, "road": 168,
@@ -36,6 +45,79 @@ DUP_RADIUS_M = {
 
 MAX_BODY = 2_000_000          # 2 MB. A shrunk photo is ~50 KB.
 LEVELS = ["Gram Panchayat", "Taluk Panchayat", "Zilla Panchayat"]
+
+# The officer behind each level. Karnataka has not held Taluk or Zilla
+# Panchayat elections since 2020-21, so levels 1 and 2 are appointed
+# officers, not elected councils. Say that on stage before a judge says it.
+LEVEL_OFFICER = ["Panchayat Development Officer",
+                 "Taluk Panchayat Executive Officer",
+                 "Zilla Panchayat Chief Executive Officer"]
+
+# ------------------------------------------------------- who owns what
+#
+# Half of "why was this never fixed" is that the complaint reached a body
+# that was never responsible for it. A dark pole is the clearest case: the
+# bulb and fitting are the Gram Panchayat's own obligatory duty, but the
+# line, the pole feed and the transformer belong to the ESCOM. One dark
+# pole, two owners, and a resident who cannot be expected to know which.
+#
+# So the app routes. Every category starts with a default owner, and staff
+# can hand a report to the right body WITHOUT closing it (see reroute).
+BODIES = {
+    "gp":    {"name": "Gram Panchayat",
+              "officer": "Panchayat Development Officer",
+              "reach": "Panchayat office"},
+    "escom": {"name": "CESC Mysuru",
+              "officer": "Section Officer",
+              "reach": "1912"},
+    "rdwsd": {"name": "Rural Drinking Water & Sanitation Dept",
+              "officer": "Assistant Executive Engineer",
+              "reach": "Taluk office"},
+    "pred":  {"name": "Panchayat Raj Engineering Division",
+              "officer": "Assistant Executive Engineer",
+              "reach": "Zilla Panchayat"},
+    "pwd":   {"name": "Public Works Department",
+              "officer": "Assistant Engineer",
+              "reach": "Taluk office"},
+    "edu":   {"name": "Education Department",
+              "officer": "Block Education Officer",
+              "reach": "BEO office"},
+    "ksrtc": {"name": "KSRTC",
+              "officer": "Depot Manager",
+              "reach": "Depot"},
+}
+
+# Where a report starts. Not where it must end: a dry tap on a single
+# village scheme is the GP's, the same tap on a multi village scheme is
+# the department's, and only a human can tell those apart on site.
+OWNERS = {
+    "power": "escom", "light": "gp", "water": "gp", "bore": "gp",
+    "waste": "gp", "toilet": "gp", "drain": "gp", "road": "gp",
+    "bus": "ksrtc",
+}
+
+# A school toilet is not a Gram Panchayat asset. The education department
+# funds school toilet upkeep separately, so a toilet or water report
+# tagged to a school or anganwadi is routed there instead.
+SCHOOL_OWNER = {"toilet": "edu", "water": "edu", "bore": "edu"}
+
+PLACE_KINDS = {"school": "Government school",
+               "anganwadi": "Anganwadi centre"}
+
+# ------------------------------------------------- the reasons an official may give
+#
+# The whole point of this list is that it is a LIST. A free text box turns
+# into an excuse field within a week and cannot be counted. A fixed set of
+# codes can be counted, and "no funds, filed 30 times this quarter" is a
+# budget argument with a number attached rather than a complaint.
+REASONS = {
+    "no_funds":          "No funds until the Gram Sabha approves this work",
+    "not_our_asset":     "This asset belongs to another department",
+    "awaiting_material": "Waiting for material or a spare part",
+    "work_ordered":      "Work order issued, contractor scheduled",
+    "no_staff":          "No staff available for this trade",
+    "needs_sanction":    "Needs technical sanction above the Panchayat's limit",
+}
 
 
 # ---------------------------------------------------------------- database
@@ -67,7 +149,9 @@ def setup_db():
                 reporter_hash  TEXT    NOT NULL,
                 worker         TEXT,
                 reopened       INTEGER NOT NULL DEFAULT 0,
-                escalated      INTEGER NOT NULL DEFAULT 0
+                escalated      INTEGER NOT NULL DEFAULT 0,
+                owner_body     TEXT    NOT NULL DEFAULT 'gp',
+                place_kind     TEXT
             );
             CREATE TABLE IF NOT EXISTS voices (
                 report_id  TEXT    NOT NULL,
@@ -84,6 +168,18 @@ def setup_db():
             CREATE TABLE IF NOT EXISTS meta (
                 key   TEXT PRIMARY KEY,
                 value TEXT NOT NULL
+            );
+            -- Public explanations. Note what is NOT here: any column that
+            -- could move a deadline. A reason is a thing the Panchayat
+            -- says, never a thing that buys it time.
+            CREATE TABLE IF NOT EXISTS reasons (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                report_id TEXT    NOT NULL,
+                code      TEXT    NOT NULL,
+                detail    TEXT    NOT NULL DEFAULT '',
+                body      TEXT    NOT NULL,
+                cycle     INTEGER NOT NULL DEFAULT 0,
+                at        INTEGER NOT NULL
             );
         """)
         conn.commit()
@@ -148,6 +244,46 @@ def level_for(report, at):
     return 0
 
 
+def owner_for(category, place_kind):
+    """Route by what is broken AND where it stands. The same broken toilet
+    is the Panchayat's problem beside the bus stop and the education
+    department's problem inside a school compound."""
+    if place_kind in PLACE_KINDS and category in SCHOOL_OWNER:
+        return SCHOOL_OWNER[category]
+    return OWNERS.get(category, "gp")
+
+
+def reasons_for(conn, report_id):
+    rows = conn.execute(
+        "SELECT code, detail, body, cycle, at FROM reasons "
+        "WHERE report_id = ? ORDER BY at, id", (report_id,)).fetchall()
+    out = []
+    for row in rows:
+        reason = dict(row)
+        reason["label"] = REASONS.get(reason["code"], reason["code"])
+        out.append(reason)
+    return out
+
+
+def is_silent(report, reasons, at):
+    """Past its deadline, and nobody has explained why in THIS round.
+
+    Silence is a status in this app, not an absence of one. A report
+    nobody will explain reads worse on the ledger than a report with an
+    inconvenient explanation, which is the incentive we want.
+
+    'This round' is the reopened count, not a timestamp. Each rejection by
+    the resident starts a new round, and an excuse given before the last
+    rejection does not cover the delay after it. Counting rounds rather
+    than comparing clocks also means the demo time machine cannot
+    accidentally make an old excuse look current."""
+    if report["status"] == "resolved":
+        return False
+    if level_for(report, at) == 0:
+        return False
+    return not any(r["cycle"] == report["reopened"] for r in reasons)
+
+
 def record_escalations(conn, at):
     """Escalation is computed, but the moment it happens is WRITTEN.
     Otherwise the ledger shows a red bar with nothing in its timeline to
@@ -190,12 +326,18 @@ def load_reports():
             r["history"] = [dict(h) for h in conn.execute(
                 "SELECT message, at FROM history WHERE report_id = ? "
                 "ORDER BY at, id", (r["id"],)).fetchall()]
+            r["reasons"] = reasons_for(conn, r["id"])
+            r["silent"] = is_silent(row, r["reasons"], at)
+            r["owner"] = BODIES.get(r["owner_body"], BODIES["gp"])["name"]
             out.append(r)
         # Ship the rules with the data. The browser has its own copy for
         # local mode; sending ours means the two can never silently
         # disagree about a live report's deadline.
         return {"now": at,
-                "rules": {"deadlines": DEADLINES, "radius": DUP_RADIUS_M},
+                "rules": {"deadlines": DEADLINES, "radius": DUP_RADIUS_M,
+                          "owners": OWNERS, "bodies": BODIES,
+                          "reasons": REASONS, "places": PLACE_KINDS,
+                          "officers": LEVEL_OFFICER},
                 "reports": out}
 
 
@@ -248,14 +390,20 @@ def add_report(data):
                 "SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM reports")
             report_id = "VYS-" + str(cur.fetchone()["n"]).zfill(4)
 
+            place_kind = data.get("place_kind")
+            if place_kind not in PLACE_KINDS:
+                place_kind = None
+
             conn.execute("""
                 INSERT INTO reports
                   (id, category, note, photo, lat, lng, place, status,
-                   created_at, deadline_from, reporter_hash)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
+                   created_at, deadline_from, reporter_hash,
+                   owner_body, place_kind)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?)
             """, (report_id, category, data.get("note", ""),
                   data.get("photo"), lat, lng, data.get("place"),
-                  at, at, token_hash(token)))
+                  at, at, token_hash(token),
+                  owner_for(category, place_kind), place_kind))
 
             # The reporter is the first voice. Everything counts one way.
             conn.execute("INSERT INTO voices (report_id, voter_hash, at) "
@@ -308,6 +456,59 @@ def assign_report(data):
     return 200, {"ok": True}
 
 
+def give_reason(data):
+    """An official saying, in public, why this is not fixed yet.
+
+    Read what this function does NOT do. It never writes deadline_from,
+    created_at or escalated. A reason cannot buy time, because the moment
+    it can, every report gets one on day one and the deadline stops
+    meaning anything. The clock runs, the escalation still fires, and the
+    explanation sits next to the overdue bar rather than in place of it.
+
+    Rerouting is the same story: handing a report to the ESCOM moves who
+    owns it and nothing else. Otherwise 'not our asset' becomes the new
+    way to make a report disappear, which is the thing we are here to
+    stop."""
+    code = data.get("code")
+    if code not in REASONS:
+        return 400, {"error": "pick a reason from the list"}
+
+    with closing(get_db()) as conn:
+        at = now(conn)
+        row = conn.execute("SELECT * FROM reports WHERE id = ?",
+                           (data.get("id"),)).fetchone()
+        if row is None:
+            return 404, {"error": "no such report"}
+        if row["status"] == "resolved":
+            return 409, {"error": "that report is already closed"}
+
+        speaking = row["owner_body"]
+
+        if code == "not_our_asset":
+            handed_to = data.get("to")
+            if handed_to not in BODIES:
+                return 400, {"error": "say which department it belongs to"}
+            if handed_to == speaking:
+                return 400, {"error": "that is the department it is already with"}
+            conn.execute("UPDATE reports SET owner_body = ? WHERE id = ?",
+                         (handed_to, row["id"]))
+            add_history(conn, row["id"],
+                        "Handed from " + BODIES[speaking]["name"] + " to " +
+                        BODIES[handed_to]["name"] +
+                        ". The deadline did not restart.", at)
+
+        conn.execute(
+            "INSERT INTO reasons (report_id, code, detail, body, cycle, at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (row["id"], code, (data.get("detail") or "").strip(),
+             speaking, row["reopened"], at))
+        add_history(conn, row["id"],
+                    BODIES[speaking]["name"] + " gave a reason: " +
+                    REASONS[code], at)
+        conn.commit()
+    return 200, {"ok": True}
+
+
 def mark_repaired(data):
     # Staff can only CLAIM a repair. There is no path from here to
     # 'resolved'. Not hidden, not disabled - absent from the code.
@@ -315,6 +516,19 @@ def mark_repaired(data):
         return 400, {"error": "a repair claim needs photo proof"}
     with closing(get_db()) as conn:
         at = now(conn)
+        row = conn.execute("SELECT * FROM reports WHERE id = ?",
+                           (data.get("id"),)).fetchone()
+        if row is None:
+            return 404, {"error": "no such report"}
+
+        # You may not collect credit for a late repair you never explained.
+        # This is the rule that turns the reason from a nice-to-have into
+        # something an official has to do, and it lives on the server so it
+        # is not a screen you can skip.
+        if is_silent(row, reasons_for(conn, row["id"]), at):
+            return 409, {"error": "this one went past its deadline. Give the "
+                                  "resident a reason first."}
+
         cur = conn.execute(
             "UPDATE reports SET status = 'awaiting', fix_photo = ? "
             "WHERE id = ? AND status = 'assigned'",
@@ -392,7 +606,7 @@ def reset_everything(_data):
         conn.executescript(
             "DELETE FROM reports; DELETE FROM history; "
             "DELETE FROM voices;  DELETE FROM meta; "
-            "DELETE FROM sqlite_sequence;")
+            "DELETE FROM reasons; DELETE FROM sqlite_sequence;")
         conn.commit()
     print("Everything cleared")
     return 200, {"ok": True}
@@ -402,6 +616,7 @@ ROUTES = {
     "/api/report":   add_report,
     "/api/voice":    add_voice,
     "/api/assign":   assign_report,
+    "/api/reason":   give_reason,
     "/api/repaired": mark_repaired,
     "/api/confirm":  confirm_fix,
     "/api/clock":    shift_clock,
