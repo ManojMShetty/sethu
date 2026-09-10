@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Sethu — a Gram Panchayat asset ledger.
+
+   The object this replaces is a bound register on a desk in the
+   Panchayat office: ruled paper, a red margin line down the left of
+   anything overdue, figures in columns. So the palette is register
+   stock rather than warm paper, entries are ruled rows rather than
+   floating cards, and the one saturated colour in the whole app is
+   the blue of the stamp pad every government form carries.
+
+   Semantic colour (inside the deadline / past it / past it twice) is
+   kept separate from that accent, so urgency never competes with
+   chrome for attention.
+   ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+
+  --c-ground: #e7ebe7;      /* register stock, green-biased neutral */
+  --c-surface: #fcfdfb;
+  --c-sunken: #dfe5e0;
+  --c-ink: #131b19;
+  --c-ink-2: #4a5551;
+  --c-ink-3: #6d7873;
+  --c-rule: #c6d0ca;
+  --c-rule-soft: #dde3de;
+
+  --c-brand: #0e4c55;       /* the header band and the nav */
+  --c-brand-ink: #f2f6f3;
+  --c-teal: #0e4c55;        /* accent: primary action, active rules */
+  --c-teal-ink: #f2f6f3;
+  --c-stamp: #1e3f8f;       /* the one saturated spend: department stamps */
+  --c-stamp-wash: #e4e9f5;
+
+  --c-ok: #2e6b45;          /* inside the deadline */
+  --c-ok-wash: #d9e6dd;
+  --c-late: #8f5c0c;        /* past it */
+  --c-late-wash: #f2e6cf;
+  --c-crit: #a32a1e;        /* past it twice, or nobody has explained */
+  --c-crit-wash: #f4ddd9;
+
+  --shadow-lift: 0 1px 2px rgb(19 27 25 / 0.05), 0 8px 24px -12px rgb(19 27 25 / 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --c-ground: #0e1412;
+    --c-surface: #171f1c;
+    --c-sunken: #131a18;
+    --c-ink: #e6ece8;
+    --c-ink-2: #a3afaa;
+    --c-ink-3: #7d8985;
+    --c-rule: #2b3733;
+    --c-rule-soft: #222c29;
+
+    --c-brand: #10353a;
+    --c-brand-ink: #cfe4e6;
+    --c-teal: #5fb4bb;
+    --c-teal-ink: #06211f;
+    --c-stamp: #8fabe8;
+    --c-stamp-wash: #1b2437;
+
+    --c-ok: #6fbb8b;
+    --c-ok-wash: #16281d;
+    --c-late: #d9a24e;
+    --c-late-wash: #2c2113;
+    --c-crit: #e8867a;
+    --c-crit-wash: #2e1815;
+
+    --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -14px rgb(0 0 0 / 0.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --c-ground: #0e1412;
+  --c-surface: #171f1c;
+  --c-sunken: #131a18;
+  --c-ink: #e6ece8;
+  --c-ink-2: #a3afaa;
+  --c-ink-3: #7d8985;
+  --c-rule: #2b3733;
+  --c-rule-soft: #222c29;
+
+  --c-brand: #10353a;
+  --c-brand-ink: #cfe4e6;
+  --c-teal: #5fb4bb;
+  --c-teal-ink: #06211f;
+  --c-stamp: #8fabe8;
+  --c-stamp-wash: #1b2437;
+
+  --c-ok: #6fbb8b;
+  --c-ok-wash: #16281d;
+  --c-late: #d9a24e;
+  --c-late-wash: #2c2113;
+  --c-crit: #e8867a;
+  --c-crit-wash: #2e1815;
+
+  --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -14px rgb(0 0 0 / 0.7);
+}
+
+@theme inline {
+  --color-ground: var(--c-ground);
+  --color-surface: var(--c-surface);
+  --color-sunken: var(--c-sunken);
+  --color-ink: var(--c-ink);
+  --color-ink2: var(--c-ink-2);
+  --color-ink3: var(--c-ink-3);
+  --color-rule: var(--c-rule);
+  --color-rulesoft: var(--c-rule-soft);
+  --color-brand: var(--c-brand);
+  --color-brandink: var(--c-brand-ink);
+  --color-teal: var(--c-teal);
+  --color-tealink: var(--c-teal-ink);
+  --color-stamp: var(--c-stamp);
+  --color-stampwash: var(--c-stamp-wash);
+  --color-ok: var(--c-ok);
+  --color-okwash: var(--c-ok-wash);
+  --color-late: var(--c-late);
+  --color-latewash: var(--c-late-wash);
+  --color-crit: var(--c-crit);
+  --color-critwash: var(--c-crit-wash);
+
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--c-ground);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Fraunces has an optical size axis and a "wonk" axis. Turning wonk on
+   at display sizes is what stops it reading as the default serif that
+   every generated page reaches for. */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 0, "WONK" 1;
+  font-style: italic;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.figure {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.plain {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 11.5px;
+}
+
+.micro {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* The stat strip and the issue grid scroll sideways on a phone. Hide
+   the bar but keep the scroll. */
+.fade-right {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent);
+}
+
+.no-bar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-bar::-webkit-scrollbar {
+  display: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-stamp);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pulsering {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-crit) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--c-crit) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-crit) 0%, transparent);
+  }
+}
+.listening {
+  animation: pulsering 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

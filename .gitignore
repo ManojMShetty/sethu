@@ -1,4 +1,7 @@
-sethu.db
-*.db-wal
 *.db-shm
+*.db-wal
 __pycache__/
+sethu.db
+ui/*.tsbuildinfo
+ui/dist/
+ui/node_modules/
