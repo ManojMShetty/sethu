@@ -260,7 +260,7 @@ export default function VoiceBubble({
 
       {open && (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-ink/45 px-3 pb-3"
+          className="fixed inset-0 z-40 flex items-end justify-center bg-[var(--c-scrim)] px-3 pb-3"
           onClick={stop}
         >
           <div

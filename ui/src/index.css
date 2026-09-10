@@ -53,6 +53,11 @@
   --r-ctl: 13px;
   --shadow-card: 0 1px 2px rgb(20 24 33 / 0.04), 0 6px 16px -8px rgb(20 24 33 / 0.14);
   --shadow-lift: 0 2px 6px rgb(20 24 33 / 0.08), 0 16px 32px -16px rgb(20 24 33 / 0.3);
+
+  /* What dims the page behind a panel. It cannot come from the ink
+     token: ink flips to near-white in the dark theme, and a scrim mixed
+     from it lights the page up instead of putting it in shadow. */
+  --c-scrim: rgb(9 12 17 / 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -91,6 +96,7 @@
 
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(0 0 0 / 0.7);
     --shadow-lift: 0 2px 8px rgb(0 0 0 / 0.55), 0 20px 40px -20px rgb(0 0 0 / 0.85);
+    --c-scrim: rgb(0 0 0 / 0.66);
   }
 }
 
@@ -129,6 +135,7 @@
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(0 0 0 / 0.7);
   --shadow-lift: 0 2px 8px rgb(0 0 0 / 0.55), 0 20px 40px -20px rgb(0 0 0 / 0.85);
+  --c-scrim: rgb(0 0 0 / 0.66);
 }
 
 @theme inline {
@@ -295,6 +302,47 @@ body {
 }
 .listening {
   animation: pulsering 1.6s ease-out infinite;
+}
+
+/* The menu arrives from the right edge instead of dropping out of the
+   header, so it reads as a place you went to and came back from, and
+   the header keeps its own shape the whole time.
+
+   The panel stays mounted so both directions can animate. visibility is
+   what keeps the closed panel off the tab order and out of the way of
+   taps: it flips on instantly at the start of the slide in, and is held
+   until the slide out has finished — which is why it carries its own
+   zero-length transition with a delay rather than a duration. */
+.drawer {
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s linear 0.32s;
+}
+
+.scrim {
+  background: var(--c-scrim);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.32s ease,
+    visibility 0s linear 0.32s;
+}
+
+.drawer[data-open="true"],
+.scrim[data-open="true"] {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .scrim {
+    transition-delay: 0s !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

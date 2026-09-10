@@ -199,6 +199,14 @@ export function MenuIcon({ size = 20 }: { size?: number }) {
   );
 }
 
+export function CloseIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </Glyph>
+  );
+}
+
 /* One drawn mark per category. A list of nine names is a wall of text
    in either language; nine pictures is something a person can point at
    without reading, which is the whole reason they are here. */
