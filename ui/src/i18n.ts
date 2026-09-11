@@ -75,6 +75,25 @@ const KN: Record<string, string> = {
   "Signed in as": "ಸೈನ್ ಇನ್ ಆಗಿರುವವರು",
   "Sign out": "ಸೈನ್ ಔಟ್",
 
+  // ---------- the official's proof upload ----------
+  Proof: "ಸಾಕ್ಷಿ",
+  "Upload repair proof": "ದುರಸ್ತಿಯ ಸಾಕ್ಷಿ ಸೇರಿಸಿ",
+  "Pick the job you repaired and add a photo of it. The resident who reported it is then asked to confirm.":
+    "ನೀವು ಸರಿಪಡಿಸಿದ ಕೆಲಸವನ್ನು ಆರಿಸಿ, ಅದರ ಫೋಟೋ ಸೇರಿಸಿ. ನಂತರ ದೂರು ನೀಡಿದ ನಿವಾಸಿಯನ್ನು ದೃಢಪಡಿಸಲು ಕೇಳಲಾಗುತ್ತದೆ.",
+  "Which job did you repair?": "ಯಾವ ಕೆಲಸ ಸರಿಪಡಿಸಿದಿರಿ?",
+  "No job has staff on it yet. Assign one from the desk first.":
+    "ಇನ್ನೂ ಯಾವ ಕೆಲಸಕ್ಕೂ ಸಿಬ್ಬಂದಿ ಇಲ್ಲ. ಮೊದಲು ಮೇಜಿನಿಂದ ಒಂದನ್ನು ವಹಿಸಿ.",
+  "Photo of the repair": "ದುರಸ್ತಿಯ ಫೋಟೋ",
+  "That file is not a photo.": "ಆ ಫೈಲ್ ಫೋಟೋ ಅಲ್ಲ.",
+  "Pick a job first.": "ಮೊದಲು ಕೆಲಸ ಆರಿಸಿ.",
+  "Add a photo of the repair first.": "ಮೊದಲು ದುರಸ್ತಿಯ ಫೋಟೋ ಸೇರಿಸಿ.",
+  "Submit proof": "ಸಾಕ್ಷಿ ಸಲ್ಲಿಸಿ",
+  "Submitting…": "ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ…",
+  "Proof submitted": "ಸಾಕ್ಷಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+  "The resident who reported it has been asked to confirm. Only they can close it.":
+    "ದೂರು ನೀಡಿದ ನಿವಾಸಿಯನ್ನು ದೃಢಪಡಿಸಲು ಕೇಳಲಾಗಿದೆ. ಮುಚ್ಚಬಲ್ಲವರು ಅವರು ಮಾತ್ರ.",
+  "Waiting on residents": "ನಿವಾಸಿಗಳಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ",
+
   "Demo clock": "ಪ್ರದರ್ಶನ ಗಡಿಯಾರ",
   "+1 hour": "+1 ಗಂಟೆ",
   "+24 hours": "+24 ಗಂಟೆ",

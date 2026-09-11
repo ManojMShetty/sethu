@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "./components/Header";
 import Entry from "./components/Entry";
 import Login from "./components/Login";
+import ProofForm from "./components/ProofForm";
 import ReportForm, { type Filed } from "./components/ReportForm";
 import VoiceBubble from "./components/VoiceBubble";
 import { deskOrder, ledgerOrder, tally, type Report } from "./data";
@@ -9,9 +10,9 @@ import { loadReports, resetClock, shiftClock } from "./api";
 import { setLocalClock } from "./local";
 import { clearSession, loadSession, type Session } from "./session";
 import { useT } from "./i18n";
-import { DeskIcon, LedgerIcon, ReportIcon } from "./components/Bits";
+import { DeskIcon, LedgerIcon, ProofIcon, ReportIcon } from "./components/Bits";
 
-type Tab = "report" | "ledger" | "desk";
+type Tab = "report" | "proof" | "ledger" | "desk";
 
 interface TabDef {
   id: Tab;
@@ -19,15 +20,22 @@ interface TabDef {
   Icon: (p: { size?: number }) => React.ReactElement;
 }
 
+const LEDGER_TAB: TabDef = { id: "ledger", label: "Ledger", Icon: LedgerIcon };
+
+// Residents file reports. Officials do not: they answer them at the
+// desk and upload proof once a repair is done, so their first tab is
+// the proof form instead. Neither role can reach the other's tab, and
+// the actions on each entry follow the same role.
 const RESIDENT_TABS: TabDef[] = [
   { id: "report", label: "Report", Icon: ReportIcon },
-  { id: "ledger", label: "Ledger", Icon: LedgerIcon }
+  LEDGER_TAB
 ];
 
-// The desk exists only for officials. Residents never get the tab, and
-// the actions on each entry follow the same role, so there is no way
-// to reach it by guessing.
-const OFFICIAL_TABS: TabDef[] = [...RESIDENT_TABS, { id: "desk", label: "Desk", Icon: DeskIcon }];
+const OFFICIAL_TABS: TabDef[] = [
+  { id: "proof", label: "Proof", Icon: ProofIcon },
+  LEDGER_TAB,
+  { id: "desk", label: "Desk", Icon: DeskIcon }
+];
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(loadSession);
@@ -116,7 +124,11 @@ function Ledger({ session, onSignOut }: { session: Session; onSignOut: () => voi
       />
 
       <main className="flex-1 pb-24">
-        {tab === "report" && (
+        {tab === "proof" && official && (
+          <ProofForm reports={reports} offset={offset} onDone={refresh} />
+        )}
+
+        {tab === "report" && !official && (
           <ReportForm
             nextId={nextId}
             note={note}

@@ -303,3 +303,14 @@ export function DeskIcon({ size = 22 }: { size?: number }) {
     </Glyph>
   );
 }
+
+// A photo with a tick on it: the official's proof that a job is done.
+export function ProofIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <path d="M4 16.5V7a2.5 2.5 0 0 1 2.5-2.5h11A2.5 2.5 0 0 1 20 7v4.5" />
+      <path d="M4 16.5l4.5-4.5 3.5 3.5 2-2" />
+      <path d="M13.5 18.5l2 2 4.5-4.5" />
+    </Glyph>
+  );
+}
