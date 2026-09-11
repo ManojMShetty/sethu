@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Stats } from "../data";
 import { useT, type Lang } from "../i18n";
 import { prettyPhone, type Session } from "../session";
+import { resetLocalLedger } from "../local";
 import {
   CheckIcon,
   ClockIcon,
@@ -220,6 +221,15 @@ export default function Header({
               {t("reset")}
             </button>
           </div>
+          <button
+            className="micro mt-3 self-start px-2 py-1.5 text-brandink/55 transition hover:text-brandink"
+            onClick={() => {
+              resetLocalLedger();
+              window.location.reload();
+            }}
+          >
+            {t("Reset demo data")}
+          </button>
 
           <div className="mt-auto flex items-end justify-between gap-3 border-t border-brandink/12 pt-4">
             <p className="text-[13px] leading-snug text-brandink/70">

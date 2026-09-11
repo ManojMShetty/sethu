@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "./components/Header";
 import Entry from "./components/Entry";
 import Login from "./components/Login";
+import Completed from "./components/Completed";
 import ProofForm from "./components/ProofForm";
 import ReportForm, { type Filed } from "./components/ReportForm";
 import VoiceBubble from "./components/VoiceBubble";
@@ -10,9 +11,10 @@ import { loadReports, resetClock, shiftClock } from "./api";
 import { setLocalClock } from "./local";
 import { clearSession, loadSession, type Session } from "./session";
 import { useT } from "./i18n";
-import { DeskIcon, LedgerIcon, ProofIcon, ReportIcon } from "./components/Bits";
+import { CheckIcon, DeskIcon, LedgerIcon, ProofIcon, ReportIcon } from "./components/Bits";
+import { DeskArt, LedgerArt } from "./components/Art";
 
-type Tab = "report" | "proof" | "ledger" | "desk";
+type Tab = "report" | "ledger" | "done" | "proof" | "desk";
 
 interface TabDef {
   id: Tab;
@@ -20,9 +22,12 @@ interface TabDef {
   Icon: (p: { size?: number }) => React.ReactElement;
 }
 
+// Residents file reports, watch the ledger, and close the repairs
+// staff say are done (Completed).
 const RESIDENT_TABS: TabDef[] = [
   { id: "report", label: "Report", Icon: ReportIcon },
-  { id: "ledger", label: "Ledger", Icon: LedgerIcon }
+  { id: "ledger", label: "Ledger", Icon: LedgerIcon },
+  { id: "done", label: "Completed", Icon: CheckIcon }
 ];
 
 // Officials answer reports at the desk and mark them completed on the
@@ -142,28 +147,40 @@ function Ledger({ session, onSignOut }: { session: Session; onSignOut: () => voi
 
         {tab === "ledger" && (
           <div className="mx-auto max-w-2xl">
-            <div className="px-4 pt-5 pb-3">
-              <h2 className="display text-[25px] leading-tight">{t("Public ledger")}</h2>
-              <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
-                {t(
-                  "Every report in this Panchayat, newest first, with its deadline running in the open. Nothing here is hidden from the people who filed it."
-                )}
-              </p>
+            <div className="flex items-end justify-between gap-4 px-4 pt-5 pb-3">
+              <div>
+                <h2 className="display text-[25px] leading-tight">{t("Public ledger")}</h2>
+                <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
+                  {t(
+                    "Every report in this Panchayat, newest first, with its deadline running in the open. Nothing here is hidden from the people who filed it."
+                  )}
+                </p>
+              </div>
+              <LedgerArt className="w-20 shrink-0 text-primary sm:w-24" />
             </div>
             {filed && <Receipt filed={filed} onClose={() => setFiled(null)} />}
             <Rows reports={ledger} offset={offset} loading={loading} onChanged={refresh} />
           </div>
         )}
 
+        {tab === "done" && !official && (
+          <Completed reports={reports} onChanged={refresh} />
+        )}
+
         {tab === "desk" && official && (
           <div className="mx-auto max-w-2xl">
             <div className="px-4 pt-5 pb-3">
-              <h2 className="display text-[25px] leading-tight">{t("Panchayat desk")}</h2>
-              <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
-                {t(
-                  "Sorted by what breaches soonest, not by date. A job closes only when the resident who reported it confirms."
-                )}
-              </p>
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="display text-[25px] leading-tight">{t("Panchayat desk")}</h2>
+                  <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
+                    {t(
+                      "Sorted by what breaches soonest, not by date. A job closes only when the resident who reported it confirms."
+                    )}
+                  </p>
+                </div>
+                <DeskArt className="w-20 shrink-0 text-primary sm:w-24" />
+              </div>
               {stats.silent > 0 && (
                 <p className="micro mt-3 inline-flex items-center rounded-full bg-critwash px-3 py-1.5 text-crit">
                   {stats.silent} {t("past deadline with nothing said")}
@@ -263,9 +280,10 @@ function Rows({
   }
   if (reports.length === 0) {
     return (
-      <p className="mx-4 my-6 rounded-[var(--r-card)] border border-dashed border-rule px-4 py-10 text-center text-[14px] text-ink3">
+      <div className="mx-4 my-6 rounded-[var(--r-card)] border border-dashed border-rule px-4 py-8 text-center text-[14px] text-ink3">
+        <LedgerArt className="mx-auto mb-2 w-28 text-ink3" />
         {t("No reports yet. The first one starts the ledger.")}
-      </p>
+      </div>
     );
   }
   return (

@@ -10,11 +10,43 @@ import { derive, SEED, type IssueId, type Report } from "./data";
 let rows: Report[] | null = null;
 let clockOffset = 0; // hours, mirrors the demo clock in App
 
+// The ledger lives in localStorage, so signing out as the official and
+// back in as a resident, or reloading the page, keeps every claim. It
+// is still one browser's view; two phones need server.py.
+const STORE = "sethu.ledger";
+
+function load(): Report[] | null {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) return JSON.parse(raw) as Report[];
+  } catch {
+    // storage off or junk; start from the seed
+  }
+  return null;
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify(rows));
+  } catch {
+    // storage full or off; memory still has it for this page
+  }
+}
+
+export function resetLocalLedger() {
+  rows = null;
+  try {
+    localStorage.removeItem(STORE);
+  } catch {
+    // nothing to clear
+  }
+}
+
 function ledger(): Report[] {
   if (!rows) {
     // Copy the seed so this module owns its rows. The one repair that is
     // waiting on a resident is marked as ours so that flow can be shown.
-    rows = SEED.map((r) => ({ ...r, mine: r.status === "repair_claimed" }));
+    rows = load() ?? SEED.map((r) => ({ ...r, mine: r.status === "repair_claimed" }));
   }
   return rows;
 }
@@ -32,6 +64,7 @@ function patch(id: string, change: (r: Report) => Report | string): string | nul
   const next = change(list[i]);
   if (typeof next === "string") return next;
   list[i] = next;
+  save();
   return null;
 }
 
@@ -61,6 +94,7 @@ export function localFile(input: {
     mine: true
   };
   list.unshift(stamp(fresh, "Reported by a resident"));
+  save();
   return { id };
 }
 
@@ -109,7 +143,11 @@ export function localReason(
   });
 }
 
-export function localClaimRepair(id: string, noPhotoReason = ""): string | null {
+export function localClaimRepair(
+  id: string,
+  noPhotoReason = "",
+  photo: string | null = null
+): string | null {
   return patch(id, (r) => {
     if (r.status === "fixed") return "that report is already closed";
     if (r.status === "repair_claimed") return "this one is already waiting on the resident";
@@ -123,7 +161,10 @@ export function localClaimRepair(id: string, noPhotoReason = ""): string | null 
         noPhotoReason.replace(/\.+$/, "") +
         ". Waiting for the resident who reported it."
       : "Staff submitted repair proof. Waiting for the resident who reported it.";
-    return stamp({ ...r, status: "repair_claimed", mine: true }, message);
+    return stamp(
+      { ...r, status: "repair_claimed", mine: true, fixPhoto: photo ?? undefined },
+      message
+    );
   });
 }
 

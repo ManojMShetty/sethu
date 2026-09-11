@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ISSUES, type IssueId } from "../data";
 import { deviceToken, fileReport } from "../api";
 import MapPicker, { type Spot } from "./MapPicker";
+import { tintStyle } from "./Art";
 import { IssueIcon, MicIcon } from "./Bits";
 import { stepText, useT } from "../i18n";
 
@@ -190,8 +191,9 @@ export default function ReportForm({
                   >
                     <span
                       className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                        on ? "bg-primary text-primaryink" : "bg-sunken text-ink2"
+                        on ? "bg-primary text-primaryink" : ""
                       }`}
+                      style={on ? undefined : tintStyle(i.id)}
                     >
                       <IssueIcon id={i.id} size={23} />
                     </span>

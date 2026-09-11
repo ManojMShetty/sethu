@@ -67,6 +67,10 @@ export interface Report {
   /** True when this device is the one that filed it. Only that device
       can close it, and the server enforces that regardless. */
   mine?: boolean;
+  /** The office's proof photo. Offline it is stored here; with a server
+      only the flag comes in the list and the photo is fetched on demand. */
+  fixPhoto?: string;
+  hasFixPhoto?: boolean;
 }
 
 /* The hours are not invented. A live wire is the shortest because it

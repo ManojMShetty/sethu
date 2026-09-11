@@ -3,6 +3,7 @@ import { claimRepair } from "../api";
 import { derive, deskOrder, issueOf, STATUS_NAME, type Report } from "../data";
 import { deadlineText, useT } from "../i18n";
 import { kbOf, shrinkPhoto } from "../photo";
+import { RepairArt, tintStyle } from "./Art";
 import { IssueIcon } from "./Bits";
 
 // Where an official marks a job completed. Every open problem is
@@ -93,13 +94,16 @@ export default function ProofForm({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="px-4 pt-5 pb-3">
-        <h2 className="display text-[25px] leading-tight">{t("Mark a job completed")}</h2>
-        <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
-          {t(
-            "Every open problem is listed. Press Completed on the one you fixed, then add a photo of the repair. The resident who reported it is then asked to confirm."
-          )}
-        </p>
+      <div className="flex items-end justify-between gap-4 px-4 pt-5 pb-3">
+        <div>
+          <h2 className="display text-[25px] leading-tight">{t("Mark a job completed")}</h2>
+          <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink2">
+            {t(
+              "Every open problem is listed. Press Completed on the one you fixed, then add a photo of the repair. The resident who reported it is then asked to confirm."
+            )}
+          </p>
+        </div>
+        <RepairArt className="w-20 shrink-0 text-primary sm:w-24" />
       </div>
 
       {sent && (
@@ -140,7 +144,10 @@ export default function ProofForm({
                 </div>
 
                 <div className="mt-1.5 flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sunken text-ink2">
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                    style={tintStyle(r.issue)}
+                  >
                     <IssueIcon id={r.issue} size={20} />
                   </span>
                   <div className="min-w-0 flex-1">

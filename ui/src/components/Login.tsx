@@ -9,6 +9,7 @@ import {
   type Role,
   type Session
 } from "../session";
+import { VillageScene } from "./Art";
 import { DeskIcon, ReportIcon } from "./Bits";
 
 // Mobile number + OTP sign in, for residents and for government
@@ -102,6 +103,7 @@ export default function Login({ onDone }: { onDone: (s: Session) => void }) {
           <p className="mt-2 text-[14px] text-brandink/75">
             {t("Gram Panchayat asset ledger")}
           </p>
+          <VillageScene className="mt-3 h-28 w-full text-brandink/80" />
         </div>
       </header>
 

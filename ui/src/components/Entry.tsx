@@ -1,6 +1,7 @@
 import { derive, issueOf, LEVEL_NAME, STATUS_NAME, type Report } from "../data";
 import { ageText, deadlineText, reopenedText, residentsText, useT } from "../i18n";
-import { Chip, DeadlineBar, Rail } from "./Bits";
+import { Chip, DeadlineBar, IssueIcon, Rail } from "./Bits";
+import { tintStyle } from "./Art";
 import Actions from "./Actions";
 import { useState } from "react";
 
@@ -54,7 +55,13 @@ export default function Entry({
         <span>{ageText(d.age, lang)}</span>
       </div>
 
-      <div className="mt-1.5 flex items-center gap-2">
+      <div className="mt-1.5 flex items-center gap-2.5">
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={tintStyle(report.issue)}
+        >
+          <IssueIcon id={report.issue} size={18} />
+        </span>
         <Rail tone={done ? "ok" : d.tone} />
         <h3 className="display text-[18px] leading-tight">
           {lang === "kn" ? issue.kannada : issue.name}

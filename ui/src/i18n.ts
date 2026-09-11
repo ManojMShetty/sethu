@@ -100,6 +100,19 @@ const KN: Record<string, string> = {
   "Submitting…": "ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ…",
   "Waiting on residents": "ನಿವಾಸಿಗಳಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ",
 
+  // ---------- the resident closing completed work ----------
+  "Completed work": "ಮುಗಿದ ಕೆಲಸ",
+  "Staff say these are repaired. Look at the proof and close the ones that are actually fixed. Only you can close a report you filed.":
+    "ಇವು ಸರಿಪಡಿಸಲಾಗಿದೆ ಎಂದು ಸಿಬ್ಬಂದಿ ಹೇಳಿದ್ದಾರೆ. ಸಾಕ್ಷಿ ನೋಡಿ, ನಿಜವಾಗಿ ಸರಿಯಾದವನ್ನು ಮುಚ್ಚಿ. ನೀವು ನೀಡಿದ ದೂರನ್ನು ಮುಚ್ಚಬಲ್ಲವರು ನೀವು ಮಾತ್ರ.",
+  "Nothing is waiting for you. When staff mark a repair done, it shows up here.":
+    "ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ. ಸಿಬ್ಬಂದಿ ದುರಸ್ತಿ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ಅದು ಇಲ್ಲಿ ಕಾಣುತ್ತದೆ.",
+  "Photo from the office": "ಕಚೇರಿಯ ಫೋಟೋ",
+  "Loading photo…": "ಫೋಟೋ ಲೋಡ್ ಆಗುತ್ತಿದೆ…",
+  "No photo was given. The office said:": "ಫೋಟೋ ಕೊಟ್ಟಿಲ್ಲ. ಕಚೇರಿ ಹೇಳಿದ್ದು:",
+  "No photo or note came with this claim.": "ಈ ಹೇಳಿಕೆಯೊಂದಿಗೆ ಫೋಟೋ ಅಥವಾ ಟಿಪ್ಪಣಿ ಬಂದಿಲ್ಲ.",
+  "Fixed and confirmed": "ಸರಿಪಡಿಸಿ ದೃಢಪಡಿಸಲಾಗಿದೆ",
+  "Reset demo data": "ಪ್ರದರ್ಶನ ಡೇಟಾ ಮರುಹೊಂದಿಸಿ",
+
   "Demo clock": "ಪ್ರದರ್ಶನ ಗಡಿಯಾರ",
   "+1 hour": "+1 ಗಂಟೆ",
   "+24 hours": "+24 ಗಂಟೆ",

@@ -71,6 +71,7 @@ interface RawReport {
   reasons?: RawReason[];
   history?: { message: string; at: number }[];
   reporter_hash?: string;
+  has_fix_photo?: boolean;
 }
 
 interface RawPayload {
@@ -147,7 +148,8 @@ function convert(raw: RawReport, now: number, myHash: string): Report {
     ownerBody: raw.owner_body,
     // The server only ever sends the hash of the reporter's token, so
     // it has to be compared with the hash of ours, not the token itself.
-    mine: Boolean(myHash) && raw.reporter_hash === myHash
+    mine: Boolean(myHash) && raw.reporter_hash === myHash,
+    hasFixPhoto: Boolean(raw.has_fix_photo)
   };
 }
 
@@ -315,8 +317,20 @@ export async function giveReason(id: string, code: string, detail: string, to?: 
 
 // A claim carries a photo, or a sentence saying why there is none.
 export async function claimRepair(id: string, photo: string | null, noPhotoReason = "") {
-  if (!serverUp) return localClaimRepair(id, noPhotoReason);
+  if (!serverUp) return localClaimRepair(id, noPhotoReason, photo);
   return act("/api/repaired", { id, photo, no_photo_reason: noPhotoReason });
+}
+
+// Photos never travel in the list; each one is fetched on its own.
+export async function fetchFixPhoto(id: string): Promise<string | null> {
+  try {
+    const answer = await ask<{ photo?: string }>(
+      "/api/photo?id=" + encodeURIComponent(id) + "&kind=fix"
+    );
+    return answer.photo ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function confirmFix(id: string, works: boolean) {
