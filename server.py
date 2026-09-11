@@ -512,8 +512,14 @@ def give_reason(data):
 def mark_repaired(data):
     # Staff can only CLAIM a repair. There is no path from here to
     # 'resolved'. Not hidden, not disabled - absent from the code.
-    if not data.get("photo"):
-        return 400, {"error": "a repair claim needs photo proof"}
+    #
+    # A photo is the normal proof. Staff who have none must say why, and
+    # that sentence goes on the public record next to the claim, so the
+    # resident deciding whether to accept it can read it.
+    photo = data.get("photo")
+    no_photo_reason = (data.get("no_photo_reason") or "").strip()
+    if not photo and not no_photo_reason:
+        return 400, {"error": "add a photo of the repair, or say why there is none"}
     with closing(get_db()) as conn:
         at = now(conn)
         row = conn.execute("SELECT * FROM reports WHERE id = ?",
@@ -529,15 +535,23 @@ def mark_repaired(data):
             return 409, {"error": "this one went past its deadline. Give the "
                                   "resident a reason first."}
 
+        # Open or assigned. A job nobody was formally assigned to can still
+        # be completed; the record then shows the office claimed it.
         cur = conn.execute(
-            "UPDATE reports SET status = 'awaiting', fix_photo = ? "
-            "WHERE id = ? AND status = 'assigned'",
-            (data.get("photo"), data.get("id")))
+            "UPDATE reports SET status = 'awaiting', fix_photo = ?, "
+            "worker = COALESCE(worker, 'Panchayat staff') "
+            "WHERE id = ? AND status IN ('open', 'assigned')",
+            (photo, data.get("id")))
         if cur.rowcount == 0:
-            return 409, {"error": "that job is not assigned to anyone"}
-        add_history(conn, data.get("id"),
-                    "Staff submitted repair proof. Waiting for the resident "
-                    "who reported it.", at)
+            return 409, {"error": "that job is not open"}
+        if photo:
+            message = ("Staff submitted repair proof. Waiting for the resident "
+                       "who reported it.")
+        else:
+            message = ("Staff marked this completed without a photo. Their "
+                       "reason: " + no_photo_reason.rstrip(".") + ". Waiting "
+                       "for the resident who reported it.")
+        add_history(conn, data.get("id"), message, at)
         conn.commit()
     return 200, {"ok": True}
 

@@ -20,21 +20,18 @@ interface TabDef {
   Icon: (p: { size?: number }) => React.ReactElement;
 }
 
-const LEDGER_TAB: TabDef = { id: "ledger", label: "Ledger", Icon: LedgerIcon };
-
-// Residents file reports. Officials do not: they answer them at the
-// desk and upload proof once a repair is done, so their first tab is
-// the proof form instead. Neither role can reach the other's tab, and
-// the actions on each entry follow the same role.
 const RESIDENT_TABS: TabDef[] = [
   { id: "report", label: "Report", Icon: ReportIcon },
-  LEDGER_TAB
+  { id: "ledger", label: "Ledger", Icon: LedgerIcon }
 ];
 
+// Officials answer reports at the desk and mark them completed on the
+// proof screen. They do not file reports and do not need the public
+// ledger, so those tabs are not there for them. Neither role can reach
+// the other's tabs, and the actions on each entry follow the same role.
 const OFFICIAL_TABS: TabDef[] = [
-  { id: "proof", label: "Proof", Icon: ProofIcon },
-  LEDGER_TAB,
-  { id: "desk", label: "Desk", Icon: DeskIcon }
+  { id: "desk", label: "Desk", Icon: DeskIcon },
+  { id: "proof", label: "Proof", Icon: ProofIcon }
 ];
 
 export default function App() {

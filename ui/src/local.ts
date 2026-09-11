@@ -109,20 +109,21 @@ export function localReason(
   });
 }
 
-export function localClaimRepair(id: string): string | null {
+export function localClaimRepair(id: string, noPhotoReason = ""): string | null {
   return patch(id, (r) => {
+    if (r.status === "fixed") return "that report is already closed";
+    if (r.status === "repair_claimed") return "this one is already waiting on the resident";
     if (derive(r, clockOffset).silent) {
       return "this one went past its deadline. Give the resident a reason first.";
     }
-    if (r.status !== "assigned" && r.status !== "in_progress_late") {
-      return "that job is not assigned to anyone";
-    }
     // With no server to say who filed it, whoever is looking at the
     // claim as a resident gets to answer it. That is what a demo needs.
-    return stamp(
-      { ...r, status: "repair_claimed", mine: true },
-      "Staff submitted repair proof. Waiting for the resident who reported it."
-    );
+    const message = noPhotoReason
+      ? "Staff marked this completed without a photo. Their reason: " +
+        noPhotoReason.replace(/\.+$/, "") +
+        ". Waiting for the resident who reported it."
+      : "Staff submitted repair proof. Waiting for the resident who reported it.";
+    return stamp({ ...r, status: "repair_claimed", mine: true }, message);
   });
 }
 

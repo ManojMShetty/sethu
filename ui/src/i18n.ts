@@ -75,23 +75,29 @@ const KN: Record<string, string> = {
   "Signed in as": "ಸೈನ್ ಇನ್ ಆಗಿರುವವರು",
   "Sign out": "ಸೈನ್ ಔಟ್",
 
-  // ---------- the official's proof upload ----------
+  // ---------- the official marking a job completed ----------
   Proof: "ಸಾಕ್ಷಿ",
-  "Upload repair proof": "ದುರಸ್ತಿಯ ಸಾಕ್ಷಿ ಸೇರಿಸಿ",
-  "Pick the job you repaired and add a photo of it. The resident who reported it is then asked to confirm.":
-    "ನೀವು ಸರಿಪಡಿಸಿದ ಕೆಲಸವನ್ನು ಆರಿಸಿ, ಅದರ ಫೋಟೋ ಸೇರಿಸಿ. ನಂತರ ದೂರು ನೀಡಿದ ನಿವಾಸಿಯನ್ನು ದೃಢಪಡಿಸಲು ಕೇಳಲಾಗುತ್ತದೆ.",
-  "Which job did you repair?": "ಯಾವ ಕೆಲಸ ಸರಿಪಡಿಸಿದಿರಿ?",
-  "No job has staff on it yet. Assign one from the desk first.":
-    "ಇನ್ನೂ ಯಾವ ಕೆಲಸಕ್ಕೂ ಸಿಬ್ಬಂದಿ ಇಲ್ಲ. ಮೊದಲು ಮೇಜಿನಿಂದ ಒಂದನ್ನು ವಹಿಸಿ.",
-  "Photo of the repair": "ದುರಸ್ತಿಯ ಫೋಟೋ",
-  "That file is not a photo.": "ಆ ಫೈಲ್ ಫೋಟೋ ಅಲ್ಲ.",
-  "Pick a job first.": "ಮೊದಲು ಕೆಲಸ ಆರಿಸಿ.",
-  "Add a photo of the repair first.": "ಮೊದಲು ದುರಸ್ತಿಯ ಫೋಟೋ ಸೇರಿಸಿ.",
-  "Submit proof": "ಸಾಕ್ಷಿ ಸಲ್ಲಿಸಿ",
-  "Submitting…": "ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ…",
-  "Proof submitted": "ಸಾಕ್ಷಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+  "Mark a job completed": "ಕೆಲಸ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿ",
+  "Every open problem is listed. Press Completed on the one you fixed, then add a photo of the repair. The resident who reported it is then asked to confirm.":
+    "ಬಾಕಿ ಇರುವ ಎಲ್ಲ ಸಮಸ್ಯೆಗಳು ಇಲ್ಲಿವೆ. ನೀವು ಸರಿಪಡಿಸಿದ ಸಮಸ್ಯೆಯ ಮೇಲೆ 'ಮುಗಿದಿದೆ' ಒತ್ತಿ, ದುರಸ್ತಿಯ ಫೋಟೋ ಸೇರಿಸಿ. ನಂತರ ದೂರು ನೀಡಿದ ನಿವಾಸಿಯನ್ನು ದೃಢಪಡಿಸಲು ಕೇಳಲಾಗುತ್ತದೆ.",
+  Completed: "ಮುಗಿದಿದೆ",
+  "Marked completed": "ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ",
   "The resident who reported it has been asked to confirm. Only they can close it.":
     "ದೂರು ನೀಡಿದ ನಿವಾಸಿಯನ್ನು ದೃಢಪಡಿಸಲು ಕೇಳಲಾಗಿದೆ. ಮುಚ್ಚಬಲ್ಲವರು ಅವರು ಮಾತ್ರ.",
+  "Nothing is open. Every report is either fixed or waiting on a resident.":
+    "ಯಾವುದೂ ಬಾಕಿ ಇಲ್ಲ. ಪ್ರತಿ ದೂರು ಸರಿಯಾಗಿದೆ ಅಥವಾ ನಿವಾಸಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ.",
+  "Photo of the repair": "ದುರಸ್ತಿಯ ಫೋಟೋ",
+  "That file is not a photo.": "ಆ ಫೈಲ್ ಫೋಟೋ ಅಲ್ಲ.",
+  "I don't have a photo": "ನನ್ನ ಬಳಿ ಫೋಟೋ ಇಲ್ಲ",
+  "Tell the resident why there is no photo": "ಫೋಟೋ ಏಕೆ ಇಲ್ಲ ಎಂದು ನಿವಾಸಿಗೆ ತಿಳಿಸಿ",
+  "The ESCOM crew replaced the pole; nobody from the office was there to take a photo.":
+    "ಎಸ್ಕಾಂ ತಂಡ ಕಂಬ ಬದಲಿಸಿತು; ಫೋಟೋ ತೆಗೆಯಲು ಕಚೇರಿಯಿಂದ ಯಾರೂ ಇರಲಿಲ್ಲ.",
+  "This goes on the public record next to your claim.":
+    "ಇದು ನಿಮ್ಮ ಹೇಳಿಕೆಯ ಪಕ್ಕ ಸಾರ್ವಜನಿಕ ದಾಖಲೆಯಲ್ಲಿ ಸೇರುತ್ತದೆ.",
+  "Add a photo, or say why there is none.": "ಫೋಟೋ ಸೇರಿಸಿ, ಅಥವಾ ಏಕೆ ಇಲ್ಲ ಎಂದು ಹೇಳಿ.",
+  Cancel: "ರದ್ದು",
+  Submit: "ಸಲ್ಲಿಸಿ",
+  "Submitting…": "ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ…",
   "Waiting on residents": "ನಿವಾಸಿಗಳಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ",
 
   "Demo clock": "ಪ್ರದರ್ಶನ ಗಡಿಯಾರ",

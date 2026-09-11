@@ -313,9 +313,10 @@ export async function giveReason(id: string, code: string, detail: string, to?: 
   return act("/api/reason", { id, code, detail, to });
 }
 
-export async function claimRepair(id: string, photo: string) {
-  if (!serverUp) return localClaimRepair(id);
-  return act("/api/repaired", { id, photo });
+// A claim carries a photo, or a sentence saying why there is none.
+export async function claimRepair(id: string, photo: string | null, noPhotoReason = "") {
+  if (!serverUp) return localClaimRepair(id, noPhotoReason);
+  return act("/api/repaired", { id, photo, no_photo_reason: noPhotoReason });
 }
 
 export async function confirmFix(id: string, works: boolean) {
