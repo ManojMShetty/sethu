@@ -1,36 +1,13 @@
 import { useRef, useState } from "react";
 import { ISSUES, type IssueId } from "../data";
-import { fileReport } from "../api";
+import { deviceToken, fileReport } from "../api";
 import MapPicker, { type Spot } from "./MapPicker";
 import { IssueIcon, MicIcon } from "./Bits";
 import { stepText, useT } from "../i18n";
 
-/* Three screens, not one long page.
- *
- * The scrolling version put every question in front of a person at
- * once, which reads as a form to fill in. Standing in front of a broken
- * hand pump on a phone in the sun, one question at a time is the easier
- * thing: photo, then what, then where, then send. Nothing is hidden by
- * it, because the rail across the top says how many screens there are
- * and Back goes to any of them without losing an answer.
- */
-
-/* One token per browser, kept forever. It is how the server knows
-   whether you are the person who filed a report, which decides whether
-   you are allowed to close it. Nothing else in the app depends on
-   knowing who you are. */
-function deviceToken(): string {
-  try {
-    let t = localStorage.getItem("sethu.token");
-    if (!t) {
-      t = "tok-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem("sethu.token", t);
-    }
-    return t;
-  } catch {
-    return "tok-anonymous";
-  }
-}
+/* Three screens, not one long page: photo, then what, then where, then
+   send. The rail at the top says how many there are and Back goes to
+   any of them without losing an answer. */
 
 const PLACES = ["Neither", "Government school", "Anganwadi centre"] as const;
 const SCREENS = 3;
@@ -46,7 +23,6 @@ export default function ReportForm({
   onPhoto,
   note,
   onNote,
-  online,
   onFiled
 }: {
   nextId: string;
@@ -54,7 +30,6 @@ export default function ReportForm({
   onPhoto: (has: boolean) => void;
   note: string;
   onNote: (v: string) => void;
-  online: boolean;
   onFiled: (filed: Filed) => void;
 }) {
   const { lang, t } = useT();
@@ -69,23 +44,23 @@ export default function ReportForm({
   async function send() {
     if (!issue) return;
     setSending(true);
-    const answer = online
-      ? await fileReport({
-          issue,
-          note,
-          lat: pin?.lat ?? null,
-          lng: pin?.lng ?? null,
-          place: pin?.name ?? null,
-          placeKind:
-            place === "Government school"
-              ? "school"
-              : place === "Anganwadi centre"
-                ? "anganwadi"
-                : null,
-          token: deviceToken(),
-          photo: photo?.src
-        })
-      : null;
+    // Goes to server.py when it is running, and to the local ledger
+    // when it is not, so the report shows up on the ledger either way.
+    const answer = await fileReport({
+      issue,
+      note,
+      lat: pin?.lat ?? null,
+      lng: pin?.lng ?? null,
+      place: pin?.name ?? null,
+      placeKind:
+        place === "Government school"
+          ? "school"
+          : place === "Anganwadi centre"
+            ? "anganwadi"
+            : null,
+      token: deviceToken(),
+      photo: photo?.src
+    });
     setSending(false);
 
     // The receipt is shown on the ledger, next to the entry it created,
@@ -152,7 +127,7 @@ export default function ReportForm({
             <span
               key={n}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                n <= step ? "bg-teal" : "bg-rule"
+                n <= step ? "bg-primary" : "bg-rule"
               }`}
             />
           ))}
@@ -189,7 +164,7 @@ export default function ReportForm({
               </div>
             ) : (
               <button
-                className="flex min-h-[38vh] w-full items-center justify-center rounded-[var(--r-ctl)] border-2 border-dashed border-rule bg-sunken px-4 text-[15px] font-medium text-ink2 transition hover:border-teal hover:text-ink"
+                className="flex min-h-[38vh] w-full items-center justify-center rounded-[var(--r-ctl)] border-2 border-dashed border-rule bg-sunken px-4 text-[15px] font-medium text-ink2 transition hover:border-primary hover:text-ink"
                 onClick={() => fileRef.current?.click()}
               >
                 {t("Take a photo, or choose one")}
@@ -210,19 +185,19 @@ export default function ReportForm({
                     aria-pressed={on}
                     title={t(i.why)}
                     className={`flex flex-col items-center gap-1.5 rounded-[var(--r-ctl)] px-1 py-2.5 transition ${
-                      on ? "bg-tealwash" : "hover:bg-sunken"
+                      on ? "bg-primarywash" : "hover:bg-sunken"
                     }`}
                   >
                     <span
                       className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                        on ? "bg-teal text-tealink" : "bg-sunken text-ink2"
+                        on ? "bg-primary text-primaryink" : "bg-sunken text-ink2"
                       }`}
                     >
                       <IssueIcon id={i.id} size={23} />
                     </span>
                     <span
                       className={`flex min-h-[2.3em] items-center text-center text-[11.5px] leading-tight font-semibold ${
-                        on ? "text-teal" : "text-ink2"
+                        on ? "text-primary" : "text-ink2"
                       }`}
                     >
                       {lang === "kn" ? i.kannada : i.name}
@@ -242,11 +217,11 @@ export default function ReportForm({
               value={note}
               onChange={(e) => onNote(e.target.value)}
               placeholder={t("Dark since Deepavali. Children walk here at 6am.")}
-              className="w-full resize-y rounded-[var(--r-ctl)] border border-rule bg-sunken px-3.5 py-3 text-[15px] text-ink placeholder:text-ink3 focus:border-teal focus:outline-none"
+              className="w-full resize-y rounded-[var(--r-ctl)] border border-rule bg-sunken px-3.5 py-3 text-[15px] text-ink placeholder:text-ink3 focus:border-primary focus:outline-none"
             />
             <button
               onClick={onSpeak}
-              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[var(--r-ctl)] border border-rule py-3 text-[14px] font-semibold text-ink2 transition hover:border-teal hover:text-teal"
+              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[var(--r-ctl)] border border-rule py-3 text-[14px] font-semibold text-ink2 transition hover:border-primary hover:text-primary"
             >
               <MicIcon size={17} />
               {t("Speak instead of typing")}
@@ -272,8 +247,8 @@ export default function ReportForm({
                   aria-pressed={place === p}
                   className={`min-h-[46px] rounded-[var(--r-ctl)] border px-2 py-2 text-[13px] font-semibold transition ${
                     place === p
-                      ? "border-teal bg-teal text-tealink"
-                      : "border-rule text-ink2 hover:border-teal/60"
+                      ? "border-primary bg-primary text-primaryink"
+                      : "border-rule text-ink2 hover:border-primary/60"
                   }`}
                 >
                   {t(p)}
@@ -299,7 +274,7 @@ export default function ReportForm({
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-3">
           {step > 1 && (
             <button
-              className="rounded-[var(--r-ctl)] border border-rule px-5 py-3.5 text-[15px] font-semibold text-ink2 transition hover:border-teal hover:text-teal"
+              className="rounded-[var(--r-ctl)] border border-rule px-5 py-3.5 text-[15px] font-semibold text-ink2 transition hover:border-primary hover:text-primary"
               onClick={() => setStep((n) => n - 1)}
             >
               {t("Back")}
@@ -311,7 +286,7 @@ export default function ReportForm({
               if (needsPhoto) return fileRef.current?.click();
               return step < SCREENS ? setStep((n) => n + 1) : send();
             }}
-            className="flex-1 rounded-[var(--r-ctl)] bg-teal py-3.5 text-[16px] font-semibold text-tealink shadow-[var(--shadow-card)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink3 disabled:shadow-none"
+            className="flex-1 rounded-[var(--r-ctl)] bg-primary py-3.5 text-[16px] font-semibold text-primaryink shadow-[var(--shadow-card)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink3 disabled:shadow-none"
           >
             {needsPhoto
               ? t("Upload photo")

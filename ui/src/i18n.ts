@@ -50,7 +50,30 @@ const KN: Record<string, string> = {
   Silent: "ಮೌನ",
 
   Menu: "ಮೆನು",
-  Role: "ಪಾತ್ರ",
+
+  // ---------- sign in ----------
+  "Sign in as": "ಹೀಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ",
+  "Government official": "ಸರ್ಕಾರಿ ಅಧಿಕಾರಿ",
+  "Report what is broken and close it when it is fixed":
+    "ಏನು ಹಾಳಾಗಿದೆ ಎಂದು ತಿಳಿಸಿ, ಸರಿಯಾದ ಮೇಲೆ ಮುಚ್ಚಿ",
+  "Answer reports at the Panchayat desk": "ಪಂಚಾಯತಿ ಮೇಜಿನಲ್ಲಿ ದೂರುಗಳಿಗೆ ಉತ್ತರಿಸಿ",
+  "Mobile number": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ",
+  "A one-time password will be sent to this number.":
+    "ಈ ಸಂಖ್ಯೆಗೆ ಒಂದು ಬಾರಿಯ ಪಾಸ್‌ವರ್ಡ್ (OTP) ಕಳುಹಿಸಲಾಗುತ್ತದೆ.",
+  "Send OTP": "OTP ಕಳುಹಿಸಿ",
+  "Enter a valid 10-digit mobile number": "ಸರಿಯಾದ 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ",
+  "OTP sent to": "OTP ಕಳುಹಿಸಲಾಗಿದೆ:",
+  "Change number": "ಸಂಖ್ಯೆ ಬದಲಿಸಿ",
+  "Demo OTP": "ಪ್ರದರ್ಶನ OTP",
+  "No SMS is sent in this build. Type this code, or 123456.":
+    "ಈ ಆವೃತ್ತಿಯಲ್ಲಿ SMS ಹೋಗುವುದಿಲ್ಲ. ಈ ಕೋಡ್ ಅಥವಾ 123456 ಟೈಪ್ ಮಾಡಿ.",
+  "Enter the 6-digit OTP": "6 ಅಂಕಿಯ OTP ನಮೂದಿಸಿ",
+  "Verify and sign in": "ಪರಿಶೀಲಿಸಿ ಸೈನ್ ಇನ್ ಮಾಡಿ",
+  "That OTP is not right.": "ಆ OTP ಸರಿಯಿಲ್ಲ.",
+  "Officials see the Panchayat desk. Residents file reports and close them.":
+    "ಅಧಿಕಾರಿಗಳಿಗೆ ಪಂಚಾಯತಿ ಮೇಜು ಕಾಣುತ್ತದೆ. ನಿವಾಸಿಗಳು ದೂರು ನೀಡಿ ಮುಚ್ಚುತ್ತಾರೆ.",
+  "Signed in as": "ಸೈನ್ ಇನ್ ಆಗಿರುವವರು",
+  "Sign out": "ಸೈನ್ ಔಟ್",
 
   "Demo clock": "ಪ್ರದರ್ಶನ ಗಡಿಯಾರ",
   "+1 hour": "+1 ಗಂಟೆ",
@@ -204,8 +227,6 @@ const KN: Record<string, string> = {
   "Still broken": "ಇನ್ನೂ ಹಾಳಾಗಿದೆ",
   "What happened so far": "ಇಲ್ಲಿಯವರೆಗೆ ಏನಾಯಿತು",
   "Hide what happened": "ಮುಚ್ಚಿ",
-  "Switch to Panchayat staff in the menu to answer.":
-    "ಉತ್ತರಿಸಲು ಮೆನುವಿನಲ್ಲಿ ಪಂಚಾಯತಿ ಸಿಬ್ಬಂದಿಗೆ ಬದಲಿಸಿ.",
 
   // history lines the server writes
   "Reported by a resident": "ನಿವಾಸಿಯಿಂದ ದೂರು",

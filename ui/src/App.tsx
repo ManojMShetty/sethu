@@ -1,48 +1,67 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "./components/Header";
 import Entry from "./components/Entry";
+import Login from "./components/Login";
 import ReportForm, { type Filed } from "./components/ReportForm";
 import VoiceBubble from "./components/VoiceBubble";
 import { deskOrder, ledgerOrder, tally, type Report } from "./data";
 import { loadReports, resetClock, shiftClock } from "./api";
+import { setLocalClock } from "./local";
+import { clearSession, loadSession, type Session } from "./session";
 import { useT } from "./i18n";
 import { DeskIcon, LedgerIcon, ReportIcon } from "./components/Bits";
 
 type Tab = "report" | "ledger" | "desk";
 
-const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => React.ReactElement }[] = [
+interface TabDef {
+  id: Tab;
+  label: string;
+  Icon: (p: { size?: number }) => React.ReactElement;
+}
+
+const RESIDENT_TABS: TabDef[] = [
   { id: "report", label: "Report", Icon: ReportIcon },
-  { id: "ledger", label: "Ledger", Icon: LedgerIcon },
-  { id: "desk", label: "Desk", Icon: DeskIcon }
+  { id: "ledger", label: "Ledger", Icon: LedgerIcon }
 ];
 
+// The desk exists only for officials. Residents never get the tab, and
+// the actions on each entry follow the same role, so there is no way
+// to reach it by guessing.
+const OFFICIAL_TABS: TabDef[] = [...RESIDENT_TABS, { id: "desk", label: "Desk", Icon: DeskIcon }];
+
 export default function App() {
-  const [tab, setTab] = useState<Tab>("ledger");
+  const [session, setSession] = useState<Session | null>(loadSession);
+
+  function signIn(next: Session) {
+    setSession(next);
+  }
+
+  function signOut() {
+    clearSession();
+    setSession(null);
+  }
+
+  if (!session) return <Login onDone={signIn} />;
+  return <Ledger key={session.phone + session.role} session={session} onSignOut={signOut} />;
+}
+
+function Ledger({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
+  const official = session.role === "official";
+  const tabs = official ? OFFICIAL_TABS : RESIDENT_TABS;
+
+  const [tab, setTab] = useState<Tab>(official ? "desk" : "ledger");
   const [reports, setReports] = useState<Report[]>([]);
   const [online, setOnline] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  /* Two clocks, one control. With a server the offset lives there, so
-     every device watching the projector moves together and the figures
-     agree. Without one it lives here, so the demo still works on a
-     laptop with no network. */
+  // The demo clock. With a server the offset lives there so every
+  // device moves together; without one it lives here.
   const [offset, setOffset] = useState(0);
 
-  const { lang, setLang, t } = useT();
-  const [staff, setStaff] = useState(false);
+  const { t } = useT();
   const [note, setNote] = useState("");
   const [speakSignal, setSpeakSignal] = useState(0);
-
-  /* The microphone dictates into the note on the report form, so it has
-     no business floating over the ledger. And it stays away until there
-     is a photo: the photo is the thing a report cannot be filed
-     without, and a mic hovering over that screen invites someone to
-     start talking instead. */
   const [hasPhoto, setHasPhoto] = useState(false);
-
-  /* What a filed report leaves behind. It is shown at the top of the
-     ledger rather than on a screen of its own, because the number only
-     means something next to the row it created. */
   const [filed, setFiled] = useState<Filed | null>(null);
 
   const refresh = useCallback(async () => {
@@ -54,8 +73,7 @@ export default function App() {
 
   useEffect(() => {
     refresh();
-    // The ledger is a live document. Poll rather than making people
-    // pull to refresh, which nobody does on a projector.
+    // The ledger is a live document; poll instead of pull-to-refresh.
     const timer = window.setInterval(refresh, 12000);
     return () => window.clearInterval(timer);
   }, [refresh]);
@@ -65,7 +83,9 @@ export default function App() {
       await refresh();
       return;
     }
-    setOffset((o) => o + hours);
+    const next = offset + hours;
+    setLocalClock(next);
+    setOffset(next);
   }
 
   async function reset() {
@@ -73,6 +93,7 @@ export default function App() {
       await refresh();
       return;
     }
+    setLocalClock(0);
     setOffset(0);
   }
 
@@ -90,10 +111,8 @@ export default function App() {
         online={online}
         onShift={shift}
         onReset={reset}
-        lang={lang}
-        onLang={setLang}
-        staff={staff}
-        onToggleRole={() => setStaff((v) => !v)}
+        session={session}
+        onSignOut={onSignOut}
       />
 
       <main className="flex-1 pb-24">
@@ -102,7 +121,6 @@ export default function App() {
             nextId={nextId}
             note={note}
             onNote={setNote}
-            online={online}
             onFiled={(receipt) => {
               setFiled(receipt);
               setTab("ledger");
@@ -124,16 +142,11 @@ export default function App() {
               </p>
             </div>
             {filed && <Receipt filed={filed} onClose={() => setFiled(null)} />}
-            <Rows
-              reports={ledger}
-              offset={offset}
-              loading={loading}
-              onChanged={refresh}
-            />
+            <Rows reports={ledger} offset={offset} loading={loading} onChanged={refresh} />
           </div>
         )}
 
-        {tab === "desk" && (
+        {tab === "desk" && official && (
           <div className="mx-auto max-w-2xl">
             <div className="px-4 pt-5 pb-3">
               <h2 className="display text-[25px] leading-tight">{t("Panchayat desk")}</h2>
@@ -141,7 +154,6 @@ export default function App() {
                 {t(
                   "Sorted by what breaches soonest, not by date. A job closes only when the resident who reported it confirms."
                 )}
-                {!staff && " " + t("Switch to Panchayat staff in the menu to answer.")}
               </p>
               {stats.silent > 0 && (
                 <p className="micro mt-3 inline-flex items-center rounded-full bg-critwash px-3 py-1.5 text-crit">
@@ -149,20 +161,14 @@ export default function App() {
                 </p>
               )}
             </div>
-            <Rows
-              reports={desk}
-              offset={offset}
-              loading={loading}
-              staff={staff}
-              onChanged={refresh}
-            />
+            <Rows reports={desk} offset={offset} loading={loading} staff onChanged={refresh} />
           </div>
         )}
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 h-[var(--nav-h)] border-t border-rule bg-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex h-full w-full max-w-2xl">
-          {TABS.map(({ id, label, Icon }) => {
+          {tabs.map(({ id, label, Icon }) => {
             const on = tab === id;
             return (
               <button
@@ -170,7 +176,7 @@ export default function App() {
                 onClick={() => setTab(id)}
                 aria-current={on ? "page" : undefined}
                 className={`flex flex-1 flex-col items-center justify-center gap-1 text-[11.5px] font-semibold transition ${
-                  on ? "text-teal" : "text-ink3 hover:text-ink2"
+                  on ? "text-primary" : "text-ink3 hover:text-ink2"
                 }`}
               >
                 <Icon size={21} />
@@ -181,6 +187,9 @@ export default function App() {
         </div>
       </nav>
 
+      {/* The mic dictates into the note on the report form, and only
+          once there is a photo, since that is the step that cannot be
+          skipped. */}
       {tab === "report" && hasPhoto && (
         <VoiceBubble
           openSignal={speakSignal}
@@ -191,9 +200,7 @@ export default function App() {
   );
 }
 
-/* The one thing a person walks away with. It carries the number they
-   would quote at the Panchayat office and the sentence that explains
-   what the number now does on its own. */
+// What a filed report leaves behind: the number to quote at the office.
 function Receipt({ filed, onClose }: { filed: Filed; onClose: () => void }) {
   const { t } = useT();
 
@@ -255,14 +262,7 @@ function Rows({
   return (
     <div className="flex flex-col gap-3 px-4">
       {reports.map((r, i) => (
-        <Entry
-          key={r.id}
-          report={r}
-          offset={offset}
-          index={i}
-          staff={staff}
-          onChanged={onChanged}
-        />
+        <Entry key={r.id} report={r} offset={offset} index={i} staff={staff} onChanged={onChanged} />
       ))}
     </div>
   );

@@ -244,8 +244,8 @@ export default function VoiceBubble({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className={`fixed z-50 flex items-center justify-center rounded-full text-tealink shadow-[var(--shadow-lift)] transition-[background-color,transform] ${
-          live ? "listening bg-crit" : "bg-teal"
+        className={`fixed z-50 flex items-center justify-center rounded-full text-primaryink shadow-[var(--shadow-lift)] transition-[background-color,transform] ${
+          live ? "listening bg-crit" : "bg-primary"
         } ${dragging ? "scale-110 cursor-grabbing" : "cursor-grab active:scale-95"}`}
         style={{
           left: pos.x,
@@ -304,7 +304,7 @@ export default function VoiceBubble({
                     aria-pressed={speech === code}
                     className={`micro rounded-full px-3 py-1.5 transition ${
                       speech === code
-                        ? "bg-teal text-tealink"
+                        ? "bg-primary text-primaryink"
                         : "bg-sunken text-ink2 hover:text-ink"
                     }`}
                   >
@@ -333,7 +333,7 @@ export default function VoiceBubble({
 
             <div className="mt-4 flex gap-2">
               <button
-                className="flex-1 rounded-[var(--r-ctl)] bg-teal py-3.5 text-[15px] font-semibold text-tealink disabled:bg-sunken disabled:text-ink3"
+                className="flex-1 rounded-[var(--r-ctl)] bg-primary py-3.5 text-[15px] font-semibold text-primaryink disabled:bg-sunken disabled:text-ink3"
                 disabled={!heard.trim()}
                 onClick={() => {
                   onText(heard.trim());

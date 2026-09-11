@@ -135,7 +135,7 @@ export default function MapPicker({
       iconAnchor: [13, 32],
       html: `<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
         <path d="M13 33C13 33 24 20.5 24 13A11 11 0 1 0 2 13c0 7.5 11 20 11 20z"
-              fill="var(--c-teal)" stroke="var(--c-surface)" stroke-width="2"/>
+              fill="var(--c-primary)" stroke="var(--c-surface)" stroke-width="2"/>
         <circle cx="13" cy="13" r="4" fill="var(--c-surface)"/>
       </svg>`
     });
@@ -198,8 +198,8 @@ export default function MapPicker({
         disabled={locating}
         className={`flex w-full items-center justify-center gap-2 rounded-[var(--r-ctl)] border py-3.5 text-[15px] font-semibold transition ${
           value
-            ? "border-rule text-ink2 hover:border-teal hover:text-teal"
-            : "border-teal bg-teal text-tealink shadow-[var(--shadow-card)] hover:opacity-90"
+            ? "border-rule text-ink2 hover:border-primary hover:text-primary"
+            : "border-primary bg-primary text-primaryink shadow-[var(--shadow-card)] hover:opacity-90"
         } disabled:opacity-60`}
       >
         <CrosshairIcon size={18} />

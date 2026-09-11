@@ -1,29 +1,25 @@
-/* ------------------------------------------------------------------
-   Talking to server.py, and carrying on without it.
+// Talking to server.py, and carrying on without it.
+//
+// The Python server owns the rules: what has escalated, who owns a
+// category, whether an office has gone silent. This file translates
+// its shapes into the ones the screens use. When the server is not
+// there, the same calls fall through to local.ts so every button still
+// does something on a laptop with no network.
 
-   The Python server is where the rules actually live: it decides what
-   has escalated, who owns a category, and whether an office has gone
-   silent. This file translates its shapes into the ones the screen
-   uses, and nothing more. Where a judgement has already been made on
-   the server we take its answer rather than recomputing one.
-
-   If the server is not there, the seed ledger loads instead and the
-   demo clock runs locally. That is not a degraded mode we are hiding:
-   a projector with no wifi should still show the argument.
-   ------------------------------------------------------------------ */
-
+import type { IssueId, Level, Report, Status } from "./data";
 import {
-  SEED,
-  type IssueId,
-  type Level,
-  type Report,
-  type Status
-} from "./data";
+  localAssign,
+  localClaimRepair,
+  localConfirm,
+  localFile,
+  localReason,
+  localReports
+} from "./local";
+import { loadSession } from "./session";
 
 const HOUR = 3_600_000;
 
-/* server.py uses the words a Panchayat clerk uses. The UI uses the
-   words a resident does. Neither should have to change for the other. */
+// server.py uses the clerk's words, the UI uses the resident's.
 const CATEGORY: Record<string, IssueId> = {
   power: "power",
   water: "pipeline",
@@ -86,9 +82,8 @@ interface RawPayload {
   };
 }
 
-/* The server ships its rule tables alongside the data so the two can
-   never quietly disagree. These are the copies the screens read; the
-   defaults are what a demo with no server falls back to. */
+// The server ships its rule tables with the data. These are the
+// defaults for a demo with no server.
 export let REASON_CODES: Record<string, string> = {
   no_funds: "No funds until the Gram Sabha approves this work",
   not_our_asset: "This asset belongs to another department",
@@ -110,21 +105,22 @@ export let BODY_NAMES: Record<string, string> = {
 
 export interface Live {
   reports: Report[];
-  /** True when the figures on screen came from server.py. */
-  online: boolean;
+  online: boolean; // true when the figures came from server.py
 }
+
+// Set by loadReports. Actions look at it to decide server or local.
+let serverUp = false;
 
 function statusOf(raw: RawReport): Status {
   if (raw.status === "resolved") return "fixed";
   if (raw.status === "awaiting") return "repair_claimed";
-  if (raw.status === "assigned")
-    return raw.level > 0 ? "in_progress_late" : "assigned";
+  if (raw.status === "assigned") return raw.level > 0 ? "in_progress_late" : "assigned";
   if (raw.level >= 2) return "escalated_zp";
   if (raw.level === 1) return "escalated_tp";
   return "waiting";
 }
 
-function convert(raw: RawReport, now: number, token: string): Report {
+function convert(raw: RawReport, now: number, myHash: string): Report {
   const last = raw.reasons?.length ? raw.reasons[raw.reasons.length - 1] : null;
 
   return {
@@ -137,8 +133,7 @@ function convert(raw: RawReport, now: number, token: string): Report {
     level: LEVELS[Math.min(2, Math.max(0, raw.level))],
     extraResidents: Math.max(0, raw.voices - 1),
     reopened: raw.reopened,
-    department:
-      raw.owner_body && raw.owner_body !== "gp" ? raw.owner : undefined,
+    department: raw.owner_body && raw.owner_body !== "gp" ? raw.owner : undefined,
     reason: last ? { headline: last.label, detail: last.detail } : undefined,
     closedByResident: raw.status === "resolved",
     serverSilent: raw.silent,
@@ -150,14 +145,19 @@ function convert(raw: RawReport, now: number, token: string): Report {
     })),
     history: raw.history,
     ownerBody: raw.owner_body,
-    mine: Boolean(raw.reporter_hash) && raw.reporter_hash === token
+    // The server only ever sends the hash of the reporter's token, so
+    // it has to be compared with the hash of ours, not the token itself.
+    mine: Boolean(myHash) && raw.reporter_hash === myHash
   };
 }
 
-/* One token per browser, kept forever. It is how the server knows who
-   filed a report, and therefore who is allowed to close it. Nothing
-   else in the app depends on knowing who you are. */
+// Who is filing. The signed-in phone number is the identity, so the
+// same person can close their report from any phone. Before the login
+// screen this was a random token per browser; that stays as the
+// fallback so nothing filed earlier becomes unclosable.
 export function deviceToken(): string {
+  const session = loadSession();
+  if (session) return "phone-" + session.phone;
   try {
     let t = localStorage.getItem("sethu.token");
     if (!t) {
@@ -168,6 +168,28 @@ export function deviceToken(): string {
   } catch {
     return "tok-anonymous";
   }
+}
+
+// Same digest server.py uses (hashlib.sha256(token).hexdigest()).
+let hashedToken = "";
+let hashedFor = "";
+
+async function myTokenHash(): Promise<string> {
+  const token = deviceToken();
+  if (token === hashedFor) return hashedToken;
+  try {
+    const bytes = new TextEncoder().encode(token);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    hashedToken = Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    // Plain http on a LAN has no WebCrypto. Nothing reads as "mine"
+    // then, and the server still checks the token on its own side.
+    hashedToken = "";
+  }
+  hashedFor = token;
+  return hashedToken;
 }
 
 async function ask<T>(path: string, body?: unknown): Promise<T> {
@@ -196,19 +218,19 @@ export async function loadReports(): Promise<Live> {
         Object.entries(payload.rules.bodies).map(([k, v]) => [k, v.name])
       );
     }
-    const me = deviceToken();
+    const me = await myTokenHash();
+    serverUp = true;
     return {
       reports: payload.reports.map((r) => convert(r, payload.now, me)),
       online: true
     };
   } catch {
-    // No server, a static host, or a dead tower. The ledger still loads.
-    return { reports: SEED, online: false };
+    serverUp = false;
+    return { reports: localReports(), online: false };
   }
 }
 
-/* The demo clock belongs to the server when there is one, so every
-   device watching the projector moves together. */
+// The demo clock belongs to the server when there is one.
 export async function shiftClock(hours: number): Promise<boolean> {
   try {
     await ask("/api/clock", { hours });
@@ -237,6 +259,7 @@ export async function fileReport(input: {
   token: string;
   photo?: string;
 }): Promise<{ id: string; duplicate?: boolean } | null> {
+  if (!serverUp) return localFile({ issue: input.issue, place: input.place });
   try {
     return await ask("/api/report", {
       category: TO_SERVER[input.issue],
@@ -253,16 +276,12 @@ export async function fileReport(input: {
   }
 }
 
-/* ------------------------------------------------------------------
-   The four things a person can do to a report after it is filed.
-
-   Each one is a thin call. Every rule that matters — that a reason
-   cannot buy time, that a late repair cannot be claimed until someone
-   has explained, that only the reporting device may close a report —
-   lives on the server, and these functions surface its refusal rather
-   than guessing at it in the browser. The message that comes back is
-   the server's own words, so the screen can never soften them.
-   ------------------------------------------------------------------ */
+// ---- what a person can do to a report after it is filed ----
+//
+// Each one returns null when it went through, or the server's own
+// error sentence when it did not. The rules (a reason cannot buy time,
+// only the reporter can close) live on the server; local.ts mirrors
+// them for the no-server demo.
 
 async function act(path: string, body: unknown): Promise<string | null> {
   try {
@@ -279,18 +298,27 @@ async function act(path: string, body: unknown): Promise<string | null> {
   }
 }
 
-export const assignReport = (id: string, worker: string) =>
-  act("/api/assign", { id, worker });
+export async function assignReport(id: string, worker: string) {
+  if (!serverUp) return localAssign(id, worker);
+  return act("/api/assign", { id, worker });
+}
 
-export const giveReason = (
-  id: string,
-  code: string,
-  detail: string,
-  to?: string
-) => act("/api/reason", { id, code, detail, to });
+export async function giveReason(id: string, code: string, detail: string, to?: string) {
+  if (!serverUp) {
+    const handTo =
+      code === "not_our_asset" ? (to ? { code: to, name: BODY_NAMES[to] ?? to } : null) : undefined;
+    if (handTo === null) return "say which department it belongs to";
+    return localReason(id, REASON_CODES[code] ?? code, detail, handTo);
+  }
+  return act("/api/reason", { id, code, detail, to });
+}
 
-export const claimRepair = (id: string, photo: string) =>
-  act("/api/repaired", { id, photo });
+export async function claimRepair(id: string, photo: string) {
+  if (!serverUp) return localClaimRepair(id);
+  return act("/api/repaired", { id, photo });
+}
 
-export const confirmFix = (id: string, works: boolean) =>
-  act("/api/confirm", { id, works, token: deviceToken() });
+export async function confirmFix(id: string, works: boolean) {
+  if (!serverUp) return localConfirm(id, works);
+  return act("/api/confirm", { id, works, token: deviceToken() });
+}

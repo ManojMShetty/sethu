@@ -1,20 +1,12 @@
 @import "tailwindcss";
 
-/* ------------------------------------------------------------------
-   Sethu — a Gram Panchayat asset ledger.
+/* Sethu — a Gram Panchayat asset ledger.
 
-   This started out looking like the bound register it replaces: ruled
-   rows, hairlines, a serif with a slant. Honest, but it read as a
-   document, and the people who have to use it standing in a lane are
-   holding a phone, not a ledger. So it now looks like the apps already
-   on that phone: a light ground, white cards with a soft lift, round
-   controls big enough for a thumb, and one warm accent.
-
-   What did not change is the part the product rests on. Semantic colour
-   — inside the deadline, past it, past it with nobody explaining — is
-   still kept away from the brand and the accent, so urgency never has
-   to compete with chrome for attention.
-   ------------------------------------------------------------------ */
+   A light ground, white cards, round controls big enough for a thumb,
+   and a navy/blue brand so it reads like a government service. The
+   semantic colours (inside the deadline, past it, past it with nobody
+   explaining) stay separate from the brand so urgency never competes
+   with chrome. */
 
 :root {
   color-scheme: light;
@@ -28,13 +20,13 @@
   --c-rule: #e3e7ef;
   --c-rule-soft: #eef1f6;
 
-  --c-brand: #123a45;       /* the header band */
+  --c-brand: #14315a;       /* the header band: navy */
   --c-brand-ink: #ffffff;
-  --c-brand-soft: #1c5364;  /* a lighter step inside the band */
+  --c-brand-soft: #1f4478;  /* a lighter step inside the band */
 
-  --c-teal: #0d9488;        /* primary action */
-  --c-teal-ink: #ffffff;
-  --c-teal-wash: #d8f2ee;
+  --c-primary: #1f5eb8;     /* primary action: blue */
+  --c-primary-ink: #ffffff;
+  --c-primary-wash: #e4edfa;
 
   --c-amber: #f59e0b;       /* the warm accent: one spend, on highlights */
   --c-amber-wash: #fdf1dc;
@@ -73,13 +65,13 @@
     --c-rule: #29313f;
     --c-rule-soft: #212936;
 
-    --c-brand: #142c35;
-    --c-brand-ink: #eef6f7;
-    --c-brand-soft: #1e4756;
+    --c-brand: #0f2340;
+    --c-brand-ink: #eef3fb;
+    --c-brand-soft: #1b3a63;
 
-    --c-teal: #2dd4bf;
-    --c-teal-ink: #04211d;
-    --c-teal-wash: #10312e;
+    --c-primary: #6ea0f0;
+    --c-primary-ink: #06182e;
+    --c-primary-wash: #14243d;
 
     --c-amber: #fbbf24;
     --c-amber-wash: #33260d;
@@ -112,13 +104,13 @@
   --c-rule: #29313f;
   --c-rule-soft: #212936;
 
-  --c-brand: #142c35;
-  --c-brand-ink: #eef6f7;
-  --c-brand-soft: #1e4756;
+  --c-brand: #0f2340;
+  --c-brand-ink: #eef3fb;
+  --c-brand-soft: #1b3a63;
 
-  --c-teal: #2dd4bf;
-  --c-teal-ink: #04211d;
-  --c-teal-wash: #10312e;
+  --c-primary: #6ea0f0;
+  --c-primary-ink: #06182e;
+  --c-primary-wash: #14243d;
 
   --c-amber: #fbbf24;
   --c-amber-wash: #33260d;
@@ -149,10 +141,10 @@
   --color-rulesoft: var(--c-rule-soft);
   --color-brand: var(--c-brand);
   --color-brandink: var(--c-brand-ink);
-  --color-teal: var(--c-teal);
-  --color-tealink: var(--c-teal-ink);
+  --color-primary: var(--c-primary);
+  --color-primaryink: var(--c-primary-ink);
   --color-brandsoft: var(--c-brand-soft);
-  --color-tealwash: var(--c-teal-wash);
+  --color-primarywash: var(--c-primary-wash);
   --color-amber: var(--c-amber);
   --color-amberwash: var(--c-amber-wash);
   --color-stamp: var(--c-stamp);
@@ -270,7 +262,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--c-teal);
+  outline: 2px solid var(--c-primary);
   outline-offset: 2px;
   border-radius: 8px;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Stats } from "../data";
 import { useT, type Lang } from "../i18n";
+import { prettyPhone, type Session } from "../session";
 import {
   CheckIcon,
   ClockIcon,
@@ -17,17 +18,13 @@ interface Props {
   online: boolean;
   onShift: (hours: number) => void;
   onReset: () => void;
-  lang: Lang;
-  onLang: (next: Lang) => void;
-  staff: boolean;
-  onToggleRole: () => void;
+  session: Session;
+  onSignOut: () => void;
 }
 
-/* The five figures are the argument the app makes, so they sit above
-   everything and recalculate the moment the clock moves. Everything
-   else that used to live up here — who you are, what the demo clock is
-   doing, whether a server answered — is machinery, and machinery goes
-   behind the menu. */
+// The five figures are the point of the app, so they sit at the top.
+// Everything else (who you are, the demo clock, the server light) goes
+// behind the menu.
 const CELLS = [
   { key: "open", Icon: OpenIcon, short: "Open", full: "open" },
   { key: "late", Icon: ClockIcon, short: "Late", full: "past deadline" },
@@ -41,24 +38,26 @@ const TONE: Record<string, string> = {
   silent: "text-crit"
 };
 
+const chip =
+  "micro rounded-full bg-brandink/12 px-3.5 py-2 text-brandink/80 transition hover:bg-brandink/22";
+
+const roundBtn =
+  "flex h-9 w-9 items-center justify-center rounded-full bg-brandink/12 text-brandink transition hover:bg-brandink/22";
+
 export default function Header({
   stats,
   offset,
   online,
   onShift,
   onReset,
-  lang,
-  onLang,
-  staff,
-  onToggleRole
+  session,
+  onSignOut
 }: Props) {
-  const { t } = useT();
+  const { lang, setLang, t } = useT();
   const [menu, setMenu] = useState(false);
 
-  /* The panel is a fixed child of this header, so the header has to
-     out-rank the tab bar and the mic while it is on screen — and it has
-     to keep that rank until the slide out has finished, or the panel
-     spends its exit animation behind them. */
+  // While the drawer is open (and until it has slid out) the header has
+  // to sit above the tab bar and the mic.
   const [raised, setRaised] = useState(false);
   useEffect(() => {
     if (menu) {
@@ -69,12 +68,11 @@ export default function Header({
     return () => window.clearTimeout(id);
   }, [menu]);
 
+  // Escape closes the drawer, and the page behind it does not scroll.
   useEffect(() => {
     if (!menu) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
     window.addEventListener("keydown", onKey);
-    /* The ledger behind must not scroll under the panel — on a phone
-       that is how you lose your place in a list you were reading. */
     const was = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -83,9 +81,7 @@ export default function Header({
     };
   }, [menu]);
 
-  /* Opening puts you in the panel and closing puts you back on the
-     button you pressed, so a keyboard never lands somewhere it cannot
-     see. The first render is skipped: nothing was opened yet. */
+  // Keyboard focus follows the drawer in and comes back to the button.
   const burger = useRef<HTMLButtonElement>(null);
   const shut = useRef<HTMLButtonElement>(null);
   const opened = useRef(false);
@@ -98,8 +94,7 @@ export default function Header({
     }
   }, [menu]);
 
-  const chip =
-    "micro rounded-full bg-brandink/12 px-3.5 py-2 transition hover:bg-brandink/22";
+  const roleLabel = session.role === "official" ? "Government official" : "Resident";
 
   return (
     <header className={`sticky top-0 text-brandink ${raised ? "z-[60]" : "z-30"}`}>
@@ -111,14 +106,11 @@ export default function Header({
             </h1>
 
             <div className="flex items-center gap-2">
-              {/* Both languages stay on screen. A toggle that shows only
-                  the other one asks the person who cannot read the
-                  current language to guess what the button does. */}
               <div className="flex overflow-hidden rounded-full bg-brandink/12 p-0.5">
                 {(["kn", "en"] as Lang[]).map((code) => (
                   <button
                     key={code}
-                    onClick={() => onLang(code)}
+                    onClick={() => setLang(code)}
                     aria-pressed={lang === code}
                     lang={code}
                     className={`micro rounded-full px-2.5 py-1 transition ${
@@ -137,7 +129,7 @@ export default function Header({
                 onClick={() => setMenu((v) => !v)}
                 aria-expanded={menu}
                 aria-label={t("Menu")}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brandink/12 text-brandink transition hover:bg-brandink/22"
+                className={roundBtn}
               >
                 <MenuIcon size={17} />
               </button>
@@ -156,9 +148,7 @@ export default function Header({
                 </span>
                 <span
                   lang="en"
-                  className={`display figure text-[22px] leading-none ${
-                    TONE[key] ?? "text-brandink"
-                  }`}
+                  className={`display figure text-[22px] leading-none ${TONE[key] ?? "text-brandink"}`}
                 >
                   {stats[key as keyof Stats]}
                 </span>
@@ -178,9 +168,6 @@ export default function Header({
         onClick={() => setMenu(false)}
       />
 
-      {/* Stage machinery, and we say so on it rather than hiding it. It
-          comes in from the right edge because that is the side the
-          button is on: the panel arrives from under your thumb. */}
       <aside
         data-open={menu}
         aria-hidden={!menu}
@@ -193,27 +180,22 @@ export default function Header({
             ref={shut}
             onClick={() => setMenu(false)}
             aria-label={t("Close")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-brandink/12 text-brandink transition hover:bg-brandink/22"
+            className={roundBtn}
           >
             <CloseIcon size={16} />
           </button>
         </div>
 
         <div className="no-bar flex flex-1 flex-col overflow-y-auto px-4 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-          <p className="micro mb-1.5 text-brandink/50">{t("Role")}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {[false, true].map((asStaff) => (
-              <button
-                key={String(asStaff)}
-                onClick={() => staff !== asStaff && onToggleRole()}
-                aria-pressed={staff === asStaff}
-                className={`${chip} ${
-                  staff === asStaff ? "!bg-brandink text-brand" : "text-brandink/80"
-                }`}
-              >
-                {t(asStaff ? "Panchayat staff" : "Resident")}
-              </button>
-            ))}
+          <p className="micro mb-1.5 text-brandink/50">{t("Signed in as")}</p>
+          <div className="rounded-[14px] bg-brandink/12 px-3.5 py-3">
+            <p className="text-[14px] font-semibold">{t(roleLabel)}</p>
+            <p lang="en" className="figure mt-0.5 text-[13px] text-brandink/70">
+              +91 {prettyPhone(session.phone)}
+            </p>
+            <button className={`${chip} mt-3`} onClick={onSignOut}>
+              {t("Sign out")}
+            </button>
           </div>
 
           <div className="mt-5 mb-1.5 flex items-baseline justify-between gap-2">
@@ -225,10 +207,10 @@ export default function Header({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <button className={`${chip} text-brandink/80`} onClick={() => onShift(1)}>
+            <button className={chip} onClick={() => onShift(1)}>
               {t("+1 hour")}
             </button>
-            <button className={`${chip} text-brandink/80`} onClick={() => onShift(24)}>
+            <button className={chip} onClick={() => onShift(24)}>
               {t("+24 hours")}
             </button>
             <button

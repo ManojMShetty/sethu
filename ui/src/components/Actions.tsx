@@ -156,7 +156,7 @@ export default function Actions({
         )}
 
         <button
-          className={`${btn} bg-teal text-tealink`}
+          className={`${btn} bg-primary text-primaryink`}
           onClick={() => setSheet(sheet === "reason" ? null : "reason")}
         >
           {t("Give a reason")}
@@ -193,7 +193,7 @@ export default function Actions({
           />
           <button
             disabled={busy || !worker.trim()}
-            className={`${btn} bg-teal text-tealink`}
+            className={`${btn} bg-primary text-primaryink`}
             onClick={() => run(assignReport(report.id, worker))}
           >
             {t("Assign")}
@@ -211,7 +211,7 @@ export default function Actions({
                 aria-pressed={code === id}
                 className={`rounded-[10px] px-3 py-2 text-left text-[13px] leading-snug transition ${
                   code === id
-                    ? "bg-teal text-tealink"
+                    ? "bg-primary text-primaryink"
                     : "bg-sunken text-ink2 hover:text-ink"
                 }`}
               >
@@ -253,7 +253,7 @@ export default function Actions({
 
           <button
             disabled={busy || !code}
-            className={`${btn} mt-2 w-full bg-teal py-3 text-[15px] text-tealink`}
+            className={`${btn} mt-2 w-full bg-primary py-3 text-[15px] text-primaryink`}
             onClick={() => run(giveReason(report.id, code, detail, handTo))}
           >
             {t("Post this where everyone can see it")}
